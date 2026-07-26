@@ -1,5 +1,6 @@
 plugins {
     java
+    id("xyz.jpenilla.run-paper") version "3.0.2"
 }
 
 group = "io.github.emevonlou"
@@ -39,5 +40,11 @@ tasks.processResources {
 
     filesMatching("plugin.yml") {
         expand(properties)
+    }
+}
+
+tasks {
+    runServer {
+        minecraftVersion("1.21.11")
     }
 }

@@ -4,3 +4,10 @@ main: io.github.emevonlou.spacetimeengine.SpacetimeEnginePlugin
 api-version: '1.21'
 author: emevonlou
 description: Um motor original e extensível de BedWars, criado em reverência a spacetime1000, um jogador extraordinário de PvP e a inspiração por trás deste projeto.
+
+commands:
+  spacetime:
+    description: Exibe informações sobre o Spacetime Engine.
+    usage: /spacetime
+    aliases:
+      - ste

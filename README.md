@@ -1,6 +1,6 @@
 # Spacetime Engine
 
-**Spacetime Engine** is an original and extensible BedWars engine created in reverence to `spacetime1000`, an extraordinary PvP player and the inspiration behind this project.
+**Spacetime Engine** is an original and extensible BedWars engine created in reverence to `spacetime...`, an extraordinary PvP player and the inspiration behind this project.
 
 ## Project status
 

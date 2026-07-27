@@ -1,11 +1,15 @@
 package io.github.emevonlou.spacetimeengine;
 
+import io.github.emevonlou.spacetimeengine.arena.Arena;
 import io.github.emevonlou.spacetimeengine.command.SpacetimeCommand;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Objects;
 
 public final class SpacetimeEnginePlugin extends JavaPlugin {
+
+    private final Arena developmentArena = new Arena("development");
 
     @Override
     public void onEnable() {
@@ -22,10 +26,19 @@ public final class SpacetimeEnginePlugin extends JavaPlugin {
         getLogger().info("Spacetime Engine foi encerrado.");
     }
 
+    public Arena getDevelopmentArena() {
+        return developmentArena;
+    }
+
     private void registerCommands() {
-        Objects.requireNonNull(
+        PluginCommand spacetimeCommand = Objects.requireNonNull(
                 getCommand("spacetime"),
                 "O comando spacetime não foi encontrado no plugin.yml."
-        ).setExecutor(new SpacetimeCommand(this));
+        );
+
+        SpacetimeCommand executor = new SpacetimeCommand(this);
+
+        spacetimeCommand.setExecutor(executor);
+        spacetimeCommand.setTabCompleter(executor);
     }
 }

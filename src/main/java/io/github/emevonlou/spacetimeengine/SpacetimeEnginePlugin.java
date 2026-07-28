@@ -1,6 +1,6 @@
 package io.github.emevonlou.spacetimeengine;
 
-import io.github.emevonlou.spacetimeengine.arena.Arena;
+import io.github.emevonlou.spacetimeengine.arena.ArenaManager;
 import io.github.emevonlou.spacetimeengine.command.SpacetimeCommand;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -9,10 +9,11 @@ import java.util.Objects;
 
 public final class SpacetimeEnginePlugin extends JavaPlugin {
 
-    private final Arena developmentArena = new Arena("development");
+    private ArenaManager arenaManager;
 
     @Override
     public void onEnable() {
+        initializeArenaManager();
         registerCommands();
 
         getLogger().info("Spacetime Engine foi iniciado.");
@@ -26,8 +27,20 @@ public final class SpacetimeEnginePlugin extends JavaPlugin {
         getLogger().info("Spacetime Engine foi encerrado.");
     }
 
-    public Arena getDevelopmentArena() {
-        return developmentArena;
+    public ArenaManager getArenaManager() {
+        return Objects.requireNonNull(
+                arenaManager,
+                "ArenaManager has not been initialized."
+        );
+    }
+
+    private void initializeArenaManager() {
+        arenaManager = new ArenaManager();
+        arenaManager.createArena("development");
+
+        getLogger().info(
+                "Arena registrada: development"
+        );
     }
 
     private void registerCommands() {

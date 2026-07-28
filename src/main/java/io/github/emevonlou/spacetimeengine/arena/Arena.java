@@ -9,11 +9,7 @@ public final class Arena {
     private ArenaState state;
 
     public Arena(String id) {
-        if (id == null || id.isBlank()) {
-            throw new IllegalArgumentException("Arena id cannot be blank.");
-        }
-
-        this.id = id.trim().toLowerCase(Locale.ROOT);
+        this.id = normalizeId(id);
         this.state = ArenaState.WAITING;
     }
 
@@ -26,7 +22,10 @@ public final class Arena {
     }
 
     public void transitionTo(ArenaState nextState) {
-        Objects.requireNonNull(nextState, "Next arena state cannot be null.");
+        Objects.requireNonNull(
+                nextState,
+                "Next arena state cannot be null."
+        );
 
         if (!state.canTransitionTo(nextState)) {
             throw new IllegalStateException(
@@ -38,5 +37,15 @@ public final class Arena {
         }
 
         state = nextState;
+    }
+
+    public static String normalizeId(String id) {
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Arena id cannot be blank."
+            );
+        }
+
+        return id.trim().toLowerCase(Locale.ROOT);
     }
 }

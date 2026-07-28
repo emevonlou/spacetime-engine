@@ -2,6 +2,7 @@ package io.github.emevonlou.spacetimeengine.command;
 
 import io.github.emevonlou.spacetimeengine.SpacetimeEnginePlugin;
 import io.github.emevonlou.spacetimeengine.arena.Arena;
+import io.github.emevonlou.spacetimeengine.arena.ArenaManager;
 import io.github.emevonlou.spacetimeengine.arena.ArenaState;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -20,6 +21,8 @@ public final class SpacetimeCommand
         implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS = List.of(
+            "arenas",
+            "create",
             "state",
             "transition"
     );
@@ -43,7 +46,9 @@ public final class SpacetimeCommand
         }
 
         return switch (args[0].toLowerCase(Locale.ROOT)) {
-            case "state" -> showArenaState(sender);
+            case "arenas" -> listArenas(sender);
+            case "create" -> createArena(sender, args);
+            case "state" -> showArenaState(sender, args);
             case "transition" -> transitionArena(sender, args);
             default -> {
                 sendUsage(sender, label);
@@ -54,12 +59,16 @@ public final class SpacetimeCommand
 
     private void sendPluginInformation(CommandSender sender) {
         sender.sendMessage(
-                Component.text("Spacetime Engine", NamedTextColor.GOLD)
+                Component.text(
+                        "Spacetime Engine",
+                        NamedTextColor.GOLD
+                )
         );
 
         sender.sendMessage(
                 Component.text(
-                        "Version: " + plugin.getPluginMeta().getVersion(),
+                        "Version: "
+                                + plugin.getPluginMeta().getVersion(),
                         NamedTextColor.GRAY
                 )
         );
@@ -72,8 +81,93 @@ public final class SpacetimeCommand
         );
     }
 
-    private boolean showArenaState(CommandSender sender) {
-        Arena arena = plugin.getDevelopmentArena();
+    private boolean listArenas(CommandSender sender) {
+        ArenaManager arenaManager = plugin.getArenaManager();
+
+        sender.sendMessage(
+                Component.text(
+                        "Registered arenas: " + arenaManager.size(),
+                        NamedTextColor.GOLD
+                )
+        );
+
+        for (Arena arena : arenaManager.getArenas()) {
+            sender.sendMessage(
+                    Component.text(
+                            "- "
+                                    + arena.getId()
+                                    + " ["
+                                    + arena.getState()
+                                    + "]",
+                            NamedTextColor.GRAY
+                    )
+            );
+        }
+
+        return true;
+    }
+
+    private boolean createArena(
+            CommandSender sender,
+            String[] args
+    ) {
+        if (!hasAdminPermission(sender)) {
+            return true;
+        }
+
+        if (args.length != 2) {
+            sender.sendMessage(
+                    Component.text(
+                            "Usage: /spacetime create <arena>",
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        try {
+            Arena arena = plugin.getArenaManager()
+                    .createArena(args[1]);
+
+            sender.sendMessage(
+                    Component.text(
+                            "Arena created: " + arena.getId(),
+                            NamedTextColor.GREEN
+                    )
+            );
+        } catch (IllegalArgumentException exception) {
+            sender.sendMessage(
+                    Component.text(
+                            exception.getMessage(),
+                            NamedTextColor.RED
+                    )
+            );
+        }
+
+        return true;
+    }
+
+    private boolean showArenaState(
+            CommandSender sender,
+            String[] args
+    ) {
+        if (args.length != 2) {
+            sender.sendMessage(
+                    Component.text(
+                            "Usage: /spacetime state <arena>",
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        Arena arena = findArenaOrNotify(sender, args[1]);
+
+        if (arena == null) {
+            return true;
+        }
 
         sender.sendMessage(
                 Component.text(
@@ -96,10 +190,14 @@ public final class SpacetimeCommand
             CommandSender sender,
             String[] args
     ) {
-        if (!sender.hasPermission("spacetime.admin")) {
+        if (!hasAdminPermission(sender)) {
+            return true;
+        }
+
+        if (args.length != 3) {
             sender.sendMessage(
                     Component.text(
-                            "You do not have permission to manage arenas.",
+                            "Usage: /spacetime transition <arena> <state>",
                             NamedTextColor.RED
                     )
             );
@@ -107,14 +205,9 @@ public final class SpacetimeCommand
             return true;
         }
 
-        if (args.length != 2) {
-            sender.sendMessage(
-                    Component.text(
-                            "Usage: /spacetime transition <state>",
-                            NamedTextColor.RED
-                    )
-            );
+        Arena arena = findArenaOrNotify(sender, args[1]);
 
+        if (arena == null) {
             return true;
         }
 
@@ -122,12 +215,12 @@ public final class SpacetimeCommand
 
         try {
             nextState = ArenaState.valueOf(
-                    args[1].toUpperCase(Locale.ROOT)
+                    args[2].toUpperCase(Locale.ROOT)
             );
         } catch (IllegalArgumentException exception) {
             sender.sendMessage(
                     Component.text(
-                            "Unknown arena state: " + args[1],
+                            "Unknown arena state: " + args[2],
                             NamedTextColor.RED
                     )
             );
@@ -135,7 +228,6 @@ public final class SpacetimeCommand
             return true;
         }
 
-        Arena arena = plugin.getDevelopmentArena();
         ArenaState previousState = arena.getState();
 
         try {
@@ -153,7 +245,9 @@ public final class SpacetimeCommand
 
         sender.sendMessage(
                 Component.text(
-                        "Arena transitioned: "
+                        "Arena "
+                                + arena.getId()
+                                + " transitioned: "
                                 + previousState
                                 + " -> "
                                 + nextState,
@@ -164,13 +258,51 @@ public final class SpacetimeCommand
         return true;
     }
 
+    private @Nullable Arena findArenaOrNotify(
+            CommandSender sender,
+            String arenaId
+    ) {
+        Arena arena = plugin.getArenaManager()
+                .findArena(arenaId)
+                .orElse(null);
+
+        if (arena == null) {
+            sender.sendMessage(
+                    Component.text(
+                            "Arena not found: "
+                                    + Arena.normalizeId(arenaId),
+                            NamedTextColor.RED
+                    )
+            );
+        }
+
+        return arena;
+    }
+
+    private boolean hasAdminPermission(CommandSender sender) {
+        if (sender.hasPermission("spacetime.admin")) {
+            return true;
+        }
+
+        sender.sendMessage(
+                Component.text(
+                        "You do not have permission to manage arenas.",
+                        NamedTextColor.RED
+                )
+        );
+
+        return false;
+    }
+
     private void sendUsage(
             CommandSender sender,
             String label
     ) {
         sender.sendMessage(
                 Component.text(
-                        "Usage: /" + label + " [state|transition <state>]",
+                        "Usage: /"
+                                + label
+                                + " [arenas|create|state|transition]",
                         NamedTextColor.YELLOW
                 )
         );
@@ -184,18 +316,39 @@ public final class SpacetimeCommand
             @NotNull String[] args
     ) {
         if (args.length == 1) {
-            return filterSuggestions(SUBCOMMANDS, args[0]);
+            return filterSuggestions(
+                    SUBCOMMANDS,
+                    args[0]
+            );
         }
 
         if (
                 args.length == 2
+                        && (
+                        args[0].equalsIgnoreCase("state")
+                                || args[0].equalsIgnoreCase("transition")
+                )
+        ) {
+            return filterSuggestions(
+                    plugin.getArenaManager().getArenaIds(),
+                    args[1]
+            );
+        }
+
+        if (
+                args.length == 3
                         && args[0].equalsIgnoreCase("transition")
         ) {
             List<String> states = Arrays.stream(ArenaState.values())
-                    .map(state -> state.name().toLowerCase(Locale.ROOT))
+                    .map(state ->
+                            state.name().toLowerCase(Locale.ROOT)
+                    )
                     .toList();
 
-            return filterSuggestions(states, args[1]);
+            return filterSuggestions(
+                    states,
+                    args[2]
+            );
         }
 
         return List.of();

@@ -130,9 +130,23 @@ public final class SpacetimeCommand
             Arena arena = plugin.getArenaManager()
                     .createArena(args[1]);
 
+            if (!plugin.saveArenas()) {
+                sender.sendMessage(
+                        Component.text(
+                                "Arena created in memory, "
+                                        + "but could not be saved: "
+                                        + arena.getId(),
+                                NamedTextColor.RED
+                        )
+                );
+
+                return true;
+            }
+
             sender.sendMessage(
                     Component.text(
-                            "Arena created: " + arena.getId(),
+                            "Arena created and saved: "
+                                    + arena.getId(),
                             NamedTextColor.GREEN
                     )
             );

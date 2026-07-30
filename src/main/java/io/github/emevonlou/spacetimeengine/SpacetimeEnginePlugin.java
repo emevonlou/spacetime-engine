@@ -1,6 +1,7 @@
 package io.github.emevonlou.spacetimeengine;
 
 import io.github.emevonlou.spacetimeengine.arena.ArenaManager;
+import io.github.emevonlou.spacetimeengine.arena.ArenaStorage;
 import io.github.emevonlou.spacetimeengine.command.SpacetimeCommand;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -10,10 +11,11 @@ import java.util.Objects;
 public final class SpacetimeEnginePlugin extends JavaPlugin {
 
     private ArenaManager arenaManager;
+    private ArenaStorage arenaStorage;
 
     @Override
     public void onEnable() {
-        initializeArenaManager();
+        initializeArenaSystem();
         registerCommands();
 
         getLogger().info("Spacetime Engine foi iniciado.");
@@ -24,6 +26,8 @@ public final class SpacetimeEnginePlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        saveArenas();
+
         getLogger().info("Spacetime Engine foi encerrado.");
     }
 
@@ -34,12 +38,46 @@ public final class SpacetimeEnginePlugin extends JavaPlugin {
         );
     }
 
-    private void initializeArenaManager() {
+    public boolean saveArenas() {
+        return Objects.requireNonNull(
+                arenaStorage,
+                "ArenaStorage has not been initialized."
+        ).saveArenas(
+                getArenaManager().getArenas()
+        );
+    }
+
+    private void initializeArenaSystem() {
         arenaManager = new ArenaManager();
-        arenaManager.createArena("development");
+        arenaStorage = new ArenaStorage(this);
+
+        int loadedArenas = 0;
+
+        for (String arenaId : arenaStorage.loadArenaIds()) {
+            try {
+                arenaManager.createArena(arenaId);
+                loadedArenas++;
+            } catch (IllegalArgumentException exception) {
+                getLogger().warning(
+                        "Arena ignorada em arenas.yml: "
+                                + exception.getMessage()
+                );
+            }
+        }
+
+        if (arenaManager.size() == 0) {
+            arenaManager.createArena("development");
+            saveArenas();
+
+            getLogger().info(
+                    "Arena padrão registrada: development"
+            );
+
+            return;
+        }
 
         getLogger().info(
-                "Arena registrada: development"
+                "Arenas carregadas: " + loadedArenas
         );
     }
 
@@ -49,7 +87,8 @@ public final class SpacetimeEnginePlugin extends JavaPlugin {
                 "O comando spacetime não foi encontrado no plugin.yml."
         );
 
-        SpacetimeCommand executor = new SpacetimeCommand(this);
+        SpacetimeCommand executor =
+                new SpacetimeCommand(this);
 
         spacetimeCommand.setExecutor(executor);
         spacetimeCommand.setTabCompleter(executor);

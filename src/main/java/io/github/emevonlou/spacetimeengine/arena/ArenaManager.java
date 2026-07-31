@@ -8,10 +8,27 @@ import java.util.Optional;
 
 public final class ArenaManager {
 
-    private final Map<String, Arena> arenas = new LinkedHashMap<>();
+    private final Map<String, Arena> arenas =
+            new LinkedHashMap<>();
 
     public Arena createArena(String id) {
-        return registerArena(new Arena(id));
+        return registerArena(
+                new Arena(id)
+        );
+    }
+
+    public Arena createArena(
+            String id,
+            int minPlayers,
+            int maxPlayers
+    ) {
+        return registerArena(
+                new Arena(
+                        id,
+                        minPlayers,
+                        maxPlayers
+                )
+        );
     }
 
     public Arena registerArena(Arena arena) {
@@ -27,7 +44,8 @@ public final class ArenaManager {
 
         if (existingArena != null) {
             throw new IllegalArgumentException(
-                    "Arena already registered: " + arena.getId()
+                    "Arena already registered: "
+                            + arena.getId()
             );
         }
 
@@ -47,11 +65,15 @@ public final class ArenaManager {
     }
 
     public List<Arena> getArenas() {
-        return List.copyOf(arenas.values());
+        return List.copyOf(
+                arenas.values()
+        );
     }
 
     public List<String> getArenaIds() {
-        return List.copyOf(arenas.keySet());
+        return List.copyOf(
+                arenas.keySet()
+        );
     }
 
     public int size() {

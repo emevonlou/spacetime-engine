@@ -20,16 +20,20 @@ import java.util.Locale;
 public final class SpacetimeCommand
         implements CommandExecutor, TabCompleter {
 
-    private static final List<String> SUBCOMMANDS = List.of(
-            "arenas",
-            "create",
-            "state",
-            "transition"
-    );
+    private static final List<String> SUBCOMMANDS =
+            List.of(
+                    "arenas",
+                    "create",
+                    "limits",
+                    "state",
+                    "transition"
+            );
 
     private final SpacetimeEnginePlugin plugin;
 
-    public SpacetimeCommand(SpacetimeEnginePlugin plugin) {
+    public SpacetimeCommand(
+            SpacetimeEnginePlugin plugin
+    ) {
         this.plugin = plugin;
     }
 
@@ -45,11 +49,24 @@ public final class SpacetimeCommand
             return true;
         }
 
-        return switch (args[0].toLowerCase(Locale.ROOT)) {
-            case "arenas" -> listArenas(sender);
-            case "create" -> createArena(sender, args);
-            case "state" -> showArenaState(sender, args);
-            case "transition" -> transitionArena(sender, args);
+        return switch (
+                args[0].toLowerCase(Locale.ROOT)
+        ) {
+            case "arenas" ->
+                    listArenas(sender);
+
+            case "create" ->
+                    createArena(sender, args);
+
+            case "limits" ->
+                    manageArenaLimits(sender, args);
+
+            case "state" ->
+                    showArenaState(sender, args);
+
+            case "transition" ->
+                    transitionArena(sender, args);
+
             default -> {
                 sendUsage(sender, label);
                 yield true;
@@ -57,7 +74,9 @@ public final class SpacetimeCommand
         };
     }
 
-    private void sendPluginInformation(CommandSender sender) {
+    private void sendPluginInformation(
+            CommandSender sender
+    ) {
         sender.sendMessage(
                 Component.text(
                         "Spacetime Engine",
@@ -68,25 +87,31 @@ public final class SpacetimeCommand
         sender.sendMessage(
                 Component.text(
                         "Version: "
-                                + plugin.getPluginMeta().getVersion(),
+                                + plugin.getPluginMeta()
+                                .getVersion(),
                         NamedTextColor.GRAY
                 )
         );
 
         sender.sendMessage(
                 Component.text(
-                        "Status: online and ready for development.",
+                        "Status: online and ready "
+                                + "for development.",
                         NamedTextColor.GREEN
                 )
         );
     }
 
-    private boolean listArenas(CommandSender sender) {
-        ArenaManager arenaManager = plugin.getArenaManager();
+    private boolean listArenas(
+            CommandSender sender
+    ) {
+        ArenaManager arenaManager =
+                plugin.getArenaManager();
 
         sender.sendMessage(
                 Component.text(
-                        "Registered arenas: " + arenaManager.size(),
+                        "Registered arenas: "
+                                + arenaManager.size(),
                         NamedTextColor.GOLD
                 )
         );
@@ -98,7 +123,10 @@ public final class SpacetimeCommand
                                     + arena.getId()
                                     + " ["
                                     + arena.getState()
-                                    + "]",
+                                    + "] players: "
+                                    + arena.getMinPlayers()
+                                    + "-"
+                                    + arena.getMaxPlayers(),
                             NamedTextColor.GRAY
                     )
             );
@@ -115,10 +143,14 @@ public final class SpacetimeCommand
             return true;
         }
 
-        if (args.length != 2) {
+        if (
+                args.length != 2
+                        && args.length != 4
+        ) {
             sender.sendMessage(
                     Component.text(
-                            "Usage: /spacetime create <arena>",
+                            "Usage: /spacetime create "
+                                    + "<arena> [min] [max]",
                             NamedTextColor.RED
                     )
             );
@@ -127,8 +159,38 @@ public final class SpacetimeCommand
         }
 
         try {
-            Arena arena = plugin.getArenaManager()
-                    .createArena(args[1]);
+            Arena arena;
+
+            if (args.length == 2) {
+                arena = plugin.getArenaManager()
+                        .createArena(args[1]);
+            } else {
+                Integer minPlayers = parseInteger(
+                        sender,
+                        args[2],
+                        "minimum players"
+                );
+
+                Integer maxPlayers = parseInteger(
+                        sender,
+                        args[3],
+                        "maximum players"
+                );
+
+                if (
+                        minPlayers == null
+                                || maxPlayers == null
+                ) {
+                    return true;
+                }
+
+                arena = plugin.getArenaManager()
+                        .createArena(
+                                args[1],
+                                minPlayers,
+                                maxPlayers
+                        );
+            }
 
             if (!plugin.saveArenas()) {
                 sender.sendMessage(
@@ -162,6 +224,122 @@ public final class SpacetimeCommand
         return true;
     }
 
+    private boolean manageArenaLimits(
+            CommandSender sender,
+            String[] args
+    ) {
+        if (
+                args.length != 2
+                        && args.length != 4
+        ) {
+            sender.sendMessage(
+                    Component.text(
+                            "Usage: /spacetime limits "
+                                    + "<arena> [min] [max]",
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        Arena arena = findArenaOrNotify(
+                sender,
+                args[1]
+        );
+
+        if (arena == null) {
+            return true;
+        }
+
+        if (args.length == 2) {
+            sender.sendMessage(
+                    Component.text(
+                            "Arena: " + arena.getId(),
+                            NamedTextColor.GRAY
+                    )
+            );
+
+            sender.sendMessage(
+                    Component.text(
+                            "Player limits: "
+                                    + arena.getMinPlayers()
+                                    + "-"
+                                    + arena.getMaxPlayers(),
+                            NamedTextColor.AQUA
+                    )
+            );
+
+            return true;
+        }
+
+        if (!hasAdminPermission(sender)) {
+            return true;
+        }
+
+        Integer minPlayers = parseInteger(
+                sender,
+                args[2],
+                "minimum players"
+        );
+
+        Integer maxPlayers = parseInteger(
+                sender,
+                args[3],
+                "maximum players"
+        );
+
+        if (
+                minPlayers == null
+                        || maxPlayers == null
+        ) {
+            return true;
+        }
+
+        try {
+            arena.updatePlayerLimits(
+                    minPlayers,
+                    maxPlayers
+            );
+
+            if (!plugin.saveArenas()) {
+                sender.sendMessage(
+                        Component.text(
+                                "Limits changed in memory, "
+                                        + "but could not be saved.",
+                                NamedTextColor.RED
+                        )
+                );
+
+                return true;
+            }
+
+            sender.sendMessage(
+                    Component.text(
+                            "Player limits updated: "
+                                    + arena.getId()
+                                    + " "
+                                    + minPlayers
+                                    + "-"
+                                    + maxPlayers,
+                            NamedTextColor.GREEN
+                    )
+            );
+        } catch (
+                IllegalArgumentException
+                        | IllegalStateException exception
+        ) {
+            sender.sendMessage(
+                    Component.text(
+                            exception.getMessage(),
+                            NamedTextColor.RED
+                    )
+            );
+        }
+
+        return true;
+    }
+
     private boolean showArenaState(
             CommandSender sender,
             String[] args
@@ -177,7 +355,10 @@ public final class SpacetimeCommand
             return true;
         }
 
-        Arena arena = findArenaOrNotify(sender, args[1]);
+        Arena arena = findArenaOrNotify(
+                sender,
+                args[1]
+        );
 
         if (arena == null) {
             return true;
@@ -211,7 +392,8 @@ public final class SpacetimeCommand
         if (args.length != 3) {
             sender.sendMessage(
                     Component.text(
-                            "Usage: /spacetime transition <arena> <state>",
+                            "Usage: /spacetime transition "
+                                    + "<arena> <state>",
                             NamedTextColor.RED
                     )
             );
@@ -219,7 +401,10 @@ public final class SpacetimeCommand
             return true;
         }
 
-        Arena arena = findArenaOrNotify(sender, args[1]);
+        Arena arena = findArenaOrNotify(
+                sender,
+                args[1]
+        );
 
         if (arena == null) {
             return true;
@@ -242,7 +427,8 @@ public final class SpacetimeCommand
             return true;
         }
 
-        ArenaState previousState = arena.getState();
+        ArenaState previousState =
+                arena.getState();
 
         try {
             arena.transitionTo(nextState);
@@ -276,15 +462,27 @@ public final class SpacetimeCommand
             CommandSender sender,
             String arenaId
     ) {
-        Arena arena = plugin.getArenaManager()
-                .findArena(arenaId)
-                .orElse(null);
+        Arena arena;
+
+        try {
+            arena = plugin.getArenaManager()
+                    .findArena(arenaId)
+                    .orElse(null);
+        } catch (IllegalArgumentException exception) {
+            sender.sendMessage(
+                    Component.text(
+                            exception.getMessage(),
+                            NamedTextColor.RED
+                    )
+            );
+
+            return null;
+        }
 
         if (arena == null) {
             sender.sendMessage(
                     Component.text(
-                            "Arena not found: "
-                                    + Arena.normalizeId(arenaId),
+                            "Arena not found: " + arenaId,
                             NamedTextColor.RED
                     )
             );
@@ -293,14 +491,40 @@ public final class SpacetimeCommand
         return arena;
     }
 
-    private boolean hasAdminPermission(CommandSender sender) {
-        if (sender.hasPermission("spacetime.admin")) {
+    private @Nullable Integer parseInteger(
+            CommandSender sender,
+            String value,
+            String fieldName
+    ) {
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException exception) {
+            sender.sendMessage(
+                    Component.text(
+                            "Invalid " + fieldName + ": " + value,
+                            NamedTextColor.RED
+                    )
+            );
+
+            return null;
+        }
+    }
+
+    private boolean hasAdminPermission(
+            CommandSender sender
+    ) {
+        if (
+                sender.hasPermission(
+                        "spacetime.admin"
+                )
+        ) {
             return true;
         }
 
         sender.sendMessage(
                 Component.text(
-                        "You do not have permission to manage arenas.",
+                        "You do not have permission "
+                                + "to manage arenas.",
                         NamedTextColor.RED
                 )
         );
@@ -316,7 +540,8 @@ public final class SpacetimeCommand
                 Component.text(
                         "Usage: /"
                                 + label
-                                + " [arenas|create|state|transition]",
+                                + " [arenas|create|limits|"
+                                + "state|transition]",
                         NamedTextColor.YELLOW
                 )
         );
@@ -339,25 +564,35 @@ public final class SpacetimeCommand
         if (
                 args.length == 2
                         && (
-                        args[0].equalsIgnoreCase("state")
-                                || args[0].equalsIgnoreCase("transition")
+                        args[0].equalsIgnoreCase("limits")
+                                || args[0].equalsIgnoreCase("state")
+                                || args[0].equalsIgnoreCase(
+                                "transition"
+                        )
                 )
         ) {
             return filterSuggestions(
-                    plugin.getArenaManager().getArenaIds(),
+                    plugin.getArenaManager()
+                            .getArenaIds(),
                     args[1]
             );
         }
 
         if (
                 args.length == 3
-                        && args[0].equalsIgnoreCase("transition")
+                        && args[0].equalsIgnoreCase(
+                        "transition"
+                )
         ) {
-            List<String> states = Arrays.stream(ArenaState.values())
-                    .map(state ->
-                            state.name().toLowerCase(Locale.ROOT)
-                    )
-                    .toList();
+            List<String> states =
+                    Arrays.stream(ArenaState.values())
+                            .map(state ->
+                                    state.name()
+                                            .toLowerCase(
+                                                    Locale.ROOT
+                                            )
+                            )
+                            .toList();
 
             return filterSuggestions(
                     states,
@@ -372,11 +607,14 @@ public final class SpacetimeCommand
             List<String> suggestions,
             String input
     ) {
-        String normalizedInput = input.toLowerCase(Locale.ROOT);
+        String normalizedInput =
+                input.toLowerCase(Locale.ROOT);
 
         return suggestions.stream()
                 .filter(suggestion ->
-                        suggestion.startsWith(normalizedInput)
+                        suggestion.startsWith(
+                                normalizedInput
+                        )
                 )
                 .toList();
     }

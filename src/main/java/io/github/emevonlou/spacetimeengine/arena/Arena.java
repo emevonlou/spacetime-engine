@@ -5,11 +5,36 @@ import java.util.Objects;
 
 public final class Arena {
 
+    public static final int DEFAULT_MIN_PLAYERS = 2;
+    public static final int DEFAULT_MAX_PLAYERS = 8;
+
     private final String id;
     private ArenaState state;
+    private int minPlayers;
+    private int maxPlayers;
 
     public Arena(String id) {
+        this(
+                id,
+                DEFAULT_MIN_PLAYERS,
+                DEFAULT_MAX_PLAYERS
+        );
+    }
+
+    public Arena(
+            String id,
+            int minPlayers,
+            int maxPlayers
+    ) {
         this.id = normalizeId(id);
+
+        validatePlayerLimits(
+                minPlayers,
+                maxPlayers
+        );
+
+        this.minPlayers = minPlayers;
+        this.maxPlayers = maxPlayers;
         this.state = ArenaState.WAITING;
     }
 
@@ -19,6 +44,37 @@ public final class Arena {
 
     public ArenaState getState() {
         return state;
+    }
+
+    public int getMinPlayers() {
+        return minPlayers;
+    }
+
+    public int getMaxPlayers() {
+        return maxPlayers;
+    }
+
+    public void updatePlayerLimits(
+            int minPlayers,
+            int maxPlayers
+    ) {
+        if (
+                state != ArenaState.WAITING
+                        && state != ArenaState.DISABLED
+        ) {
+            throw new IllegalStateException(
+                    "Player limits can only be changed "
+                            + "while the arena is waiting or disabled."
+            );
+        }
+
+        validatePlayerLimits(
+                minPlayers,
+                maxPlayers
+        );
+
+        this.minPlayers = minPlayers;
+        this.maxPlayers = maxPlayers;
     }
 
     public void transitionTo(ArenaState nextState) {
@@ -46,6 +102,35 @@ public final class Arena {
             );
         }
 
-        return id.trim().toLowerCase(Locale.ROOT);
+        String normalizedId = id
+                .trim()
+                .toLowerCase(Locale.ROOT);
+
+        if (!normalizedId.matches("[a-z0-9_-]+")) {
+            throw new IllegalArgumentException(
+                    "Arena id may only contain lowercase letters, "
+                            + "numbers, hyphens and underscores."
+            );
+        }
+
+        return normalizedId;
+    }
+
+    public static void validatePlayerLimits(
+            int minPlayers,
+            int maxPlayers
+    ) {
+        if (minPlayers < 1) {
+            throw new IllegalArgumentException(
+                    "Minimum players must be at least 1."
+            );
+        }
+
+        if (maxPlayers < minPlayers) {
+            throw new IllegalArgumentException(
+                    "Maximum players cannot be lower "
+                            + "than minimum players."
+            );
+        }
     }
 }

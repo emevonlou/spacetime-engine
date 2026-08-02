@@ -1,7 +1,10 @@
 package io.github.emevonlou.spacetimeengine.arena;
 
+import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 
 public final class Arena {
 
@@ -9,6 +12,8 @@ public final class Arena {
     public static final int DEFAULT_MAX_PLAYERS = 8;
 
     private final String id;
+    private final Set<UUID> playerIds = new LinkedHashSet<>();
+
     private ArenaState state;
     private int minPlayers;
     private int maxPlayers;
@@ -54,6 +59,41 @@ public final class Arena {
         return maxPlayers;
     }
 
+    public int getPlayerCount() {
+        return playerIds.size();
+    }
+
+    public Set<UUID> getPlayerIds() {
+        return Set.copyOf(playerIds);
+    }
+
+    public boolean isFull() {
+        return getPlayerCount() >= maxPlayers;
+    }
+
+    public boolean isAcceptingPlayers() {
+        return state == ArenaState.WAITING
+                || state == ArenaState.STARTING;
+    }
+
+    boolean addPlayer(UUID playerId) {
+        Objects.requireNonNull(
+                playerId,
+                "Player UUID cannot be null."
+        );
+
+        return playerIds.add(playerId);
+    }
+
+    boolean removePlayer(UUID playerId) {
+        Objects.requireNonNull(
+                playerId,
+                "Player UUID cannot be null."
+        );
+
+        return playerIds.remove(playerId);
+    }
+
     public void updatePlayerLimits(
             int minPlayers,
             int maxPlayers
@@ -72,6 +112,13 @@ public final class Arena {
                 minPlayers,
                 maxPlayers
         );
+
+        if (maxPlayers < getPlayerCount()) {
+            throw new IllegalArgumentException(
+                    "Maximum players cannot be lower "
+                            + "than the current player count."
+            );
+        }
 
         this.minPlayers = minPlayers;
         this.maxPlayers = maxPlayers;

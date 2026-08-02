@@ -2,8 +2,10 @@ package io.github.emevonlou.spacetimeengine;
 
 import io.github.emevonlou.spacetimeengine.arena.Arena;
 import io.github.emevonlou.spacetimeengine.arena.ArenaManager;
+import io.github.emevonlou.spacetimeengine.arena.ArenaPlayerManager;
 import io.github.emevonlou.spacetimeengine.arena.ArenaStorage;
 import io.github.emevonlou.spacetimeengine.command.SpacetimeCommand;
+import io.github.emevonlou.spacetimeengine.listener.PlayerConnectionListener;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -13,12 +15,16 @@ public final class SpacetimeEnginePlugin
         extends JavaPlugin {
 
     private ArenaManager arenaManager;
+    private ArenaPlayerManager arenaPlayerManager;
     private ArenaStorage arenaStorage;
 
     @Override
     public void onEnable() {
         initializeArenaSystem();
+        initializePlayerSystem();
+
         registerCommands();
+        registerListeners();
 
         getLogger().info(
                 "Spacetime Engine foi iniciado."
@@ -32,6 +38,10 @@ public final class SpacetimeEnginePlugin
 
     @Override
     public void onDisable() {
+        if (arenaPlayerManager != null) {
+            arenaPlayerManager.clear();
+        }
+
         if (
                 arenaManager != null
                         && arenaStorage != null
@@ -48,6 +58,13 @@ public final class SpacetimeEnginePlugin
         return Objects.requireNonNull(
                 arenaManager,
                 "ArenaManager has not been initialized."
+        );
+    }
+
+    public ArenaPlayerManager getArenaPlayerManager() {
+        return Objects.requireNonNull(
+                arenaPlayerManager,
+                "ArenaPlayerManager has not been initialized."
         );
     }
 
@@ -98,6 +115,13 @@ public final class SpacetimeEnginePlugin
         }
     }
 
+    private void initializePlayerSystem() {
+        arenaPlayerManager =
+                new ArenaPlayerManager(
+                        getArenaManager()
+                );
+    }
+
     private void registerCommands() {
         PluginCommand spacetimeCommand =
                 Objects.requireNonNull(
@@ -111,5 +135,16 @@ public final class SpacetimeEnginePlugin
 
         spacetimeCommand.setExecutor(executor);
         spacetimeCommand.setTabCompleter(executor);
+    }
+
+    private void registerListeners() {
+        getServer()
+                .getPluginManager()
+                .registerEvents(
+                        new PlayerConnectionListener(
+                                getArenaPlayerManager()
+                        ),
+                        this
+                );
     }
 }

@@ -3,6 +3,7 @@ package io.github.emevonlou.spacetimeengine.command;
 import io.github.emevonlou.spacetimeengine.SpacetimeEnginePlugin;
 import io.github.emevonlou.spacetimeengine.arena.Arena;
 import io.github.emevonlou.spacetimeengine.arena.ArenaManager;
+import io.github.emevonlou.spacetimeengine.arena.ArenaJoinResult;
 import io.github.emevonlou.spacetimeengine.arena.ArenaState;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -10,6 +11,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,7 +26,10 @@ public final class SpacetimeCommand
             List.of(
                     "arenas",
                     "create",
+                    "join",
+                    "leave",
                     "limits",
+                    "players",
                     "state",
                     "transition"
             );
@@ -58,8 +63,17 @@ public final class SpacetimeCommand
             case "create" ->
                     createArena(sender, args);
 
+            case "join" ->
+                    joinArena(sender, args);
+
+            case "leave" ->
+                    leaveArena(sender, args);
+
             case "limits" ->
                     manageArenaLimits(sender, args);
+
+            case "players" ->
+                    showArenaPlayers(sender, args);
 
             case "state" ->
                     showArenaState(sender, args);
@@ -220,6 +234,173 @@ public final class SpacetimeCommand
                     )
             );
         }
+
+        return true;
+    }
+
+    private boolean joinArena(
+            CommandSender sender,
+            String[] args
+    ) {
+        Player player = requirePlayer(sender);
+
+        if (player == null) {
+            return true;
+        }
+
+        if (args.length != 2) {
+            sender.sendMessage(
+                    Component.text(
+                            "Usage: /spacetime join <arena>",
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        Arena arena = findArenaOrNotify(
+                sender,
+                args[1]
+        );
+
+        if (arena == null) {
+            return true;
+        }
+
+        ArenaJoinResult result =
+                plugin.getArenaPlayerManager()
+                        .joinArena(
+                                player.getUniqueId(),
+                                arena
+                        );
+
+        switch (result) {
+            case SUCCESS ->
+                    sender.sendMessage(
+                            Component.text(
+                                    "Joined arena: "
+                                            + arena.getId()
+                                            + " ("
+                                            + arena.getPlayerCount()
+                                            + "/"
+                                            + arena.getMaxPlayers()
+                                            + ")",
+                                    NamedTextColor.GREEN
+                            )
+                    );
+
+            case ALREADY_IN_ARENA ->
+                    sender.sendMessage(
+                            Component.text(
+                                    "You are already in an arena.",
+                                    NamedTextColor.RED
+                            )
+                    );
+
+            case ARENA_FULL ->
+                    sender.sendMessage(
+                            Component.text(
+                                    "Arena is full: "
+                                            + arena.getId(),
+                                    NamedTextColor.RED
+                            )
+                    );
+
+            case ARENA_NOT_ACCEPTING_PLAYERS ->
+                    sender.sendMessage(
+                            Component.text(
+                                    "Arena is not accepting players: "
+                                            + arena.getId(),
+                                    NamedTextColor.RED
+                            )
+                    );
+        }
+
+        return true;
+    }
+
+    private boolean leaveArena(
+            CommandSender sender,
+            String[] args
+    ) {
+        Player player = requirePlayer(sender);
+
+        if (player == null) {
+            return true;
+        }
+
+        if (args.length != 1) {
+            sender.sendMessage(
+                    Component.text(
+                            "Usage: /spacetime leave",
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        Arena arena = plugin.getArenaPlayerManager()
+                .leaveArena(player.getUniqueId())
+                .orElse(null);
+
+        if (arena == null) {
+            sender.sendMessage(
+                    Component.text(
+                            "You are not in an arena.",
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        sender.sendMessage(
+                Component.text(
+                        "Left arena: " + arena.getId(),
+                        NamedTextColor.GREEN
+                )
+        );
+
+        return true;
+    }
+
+    private boolean showArenaPlayers(
+            CommandSender sender,
+            String[] args
+    ) {
+        if (args.length != 2) {
+            sender.sendMessage(
+                    Component.text(
+                            "Usage: /spacetime players <arena>",
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        Arena arena = findArenaOrNotify(
+                sender,
+                args[1]
+        );
+
+        if (arena == null) {
+            return true;
+        }
+
+        sender.sendMessage(
+                Component.text(
+                        "Arena "
+                                + arena.getId()
+                                + " players: "
+                                + arena.getPlayerCount()
+                                + "/"
+                                + arena.getMaxPlayers(),
+                        NamedTextColor.AQUA
+                )
+        );
 
         return true;
     }
@@ -510,6 +691,23 @@ public final class SpacetimeCommand
         }
     }
 
+    private @Nullable Player requirePlayer(
+            CommandSender sender
+    ) {
+        if (sender instanceof Player player) {
+            return player;
+        }
+
+        sender.sendMessage(
+                Component.text(
+                        "This command can only be used by a player.",
+                        NamedTextColor.RED
+                )
+        );
+
+        return null;
+    }
+
     private boolean hasAdminPermission(
             CommandSender sender
     ) {
@@ -540,8 +738,8 @@ public final class SpacetimeCommand
                 Component.text(
                         "Usage: /"
                                 + label
-                                + " [arenas|create|limits|"
-                                + "state|transition]",
+                                + " [arenas|create|join|leave|limits|"
+                                + "players|state|transition]",
                         NamedTextColor.YELLOW
                 )
         );
@@ -564,7 +762,9 @@ public final class SpacetimeCommand
         if (
                 args.length == 2
                         && (
-                        args[0].equalsIgnoreCase("limits")
+                        args[0].equalsIgnoreCase("join")
+                                || args[0].equalsIgnoreCase("limits")
+                                || args[0].equalsIgnoreCase("players")
                                 || args[0].equalsIgnoreCase("state")
                                 || args[0].equalsIgnoreCase(
                                 "transition"

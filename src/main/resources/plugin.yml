@@ -8,7 +8,7 @@ description: Um motor original e extensível de BedWars, criado em reverência a
 commands:
   spacetime:
     description: Exibe informações e ferramentas de desenvolvimento do Spacetime Engine.
-    usage: /spacetime [arenas|create|limits|state|transition]
+    usage: /spacetime [arenas|create|join|leave|limits|players|state|transition]
     aliases:
       - ste
 

@@ -4,21 +4,29 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public final class ArenaPlayerManager {
 
     private final ArenaManager arenaManager;
+    private final ArenaCountdownManager countdownManager;
 
     private final Map<UUID, String> playerArenas =
             new HashMap<>();
 
     public ArenaPlayerManager(
-            ArenaManager arenaManager
+            ArenaManager arenaManager,
+            ArenaCountdownManager countdownManager
     ) {
         this.arenaManager = Objects.requireNonNull(
                 arenaManager,
                 "ArenaManager cannot be null."
+        );
+
+        this.countdownManager = Objects.requireNonNull(
+                countdownManager,
+                "ArenaCountdownManager cannot be null."
         );
     }
 
@@ -57,6 +65,8 @@ public final class ArenaPlayerManager {
                 arena.getId()
         );
 
+        countdownManager.evaluate(arena);
+
         return ArenaJoinResult.SUCCESS;
     }
 
@@ -78,9 +88,10 @@ public final class ArenaPlayerManager {
         Optional<Arena> arena =
                 arenaManager.findArena(arenaId);
 
-        arena.ifPresent(value ->
-                value.removePlayer(playerId)
-        );
+        arena.ifPresent(value -> {
+            value.removePlayer(playerId);
+            countdownManager.evaluate(value);
+        });
 
         return arena;
     }
@@ -106,23 +117,9 @@ public final class ArenaPlayerManager {
     public void clear() {
         for (
                 UUID playerId
-                : SetCopy.of(playerArenas)
+                : Set.copyOf(playerArenas.keySet())
         ) {
             leaveArena(playerId);
-        }
-    }
-
-    private static final class SetCopy {
-
-        private SetCopy() {
-        }
-
-        static Iterable<UUID> of(
-                Map<UUID, String> map
-        ) {
-            return java.util.Set.copyOf(
-                    map.keySet()
-            );
         }
     }
 }

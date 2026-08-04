@@ -1,6 +1,7 @@
 package io.github.emevonlou.spacetimeengine;
 
 import io.github.emevonlou.spacetimeengine.arena.Arena;
+import io.github.emevonlou.spacetimeengine.arena.ArenaCountdownManager;
 import io.github.emevonlou.spacetimeengine.arena.ArenaManager;
 import io.github.emevonlou.spacetimeengine.arena.ArenaPlayerManager;
 import io.github.emevonlou.spacetimeengine.arena.ArenaStorage;
@@ -15,6 +16,7 @@ public final class SpacetimeEnginePlugin
         extends JavaPlugin {
 
     private ArenaManager arenaManager;
+    private ArenaCountdownManager arenaCountdownManager;
     private ArenaPlayerManager arenaPlayerManager;
     private ArenaStorage arenaStorage;
 
@@ -40,6 +42,10 @@ public final class SpacetimeEnginePlugin
     public void onDisable() {
         if (arenaPlayerManager != null) {
             arenaPlayerManager.clear();
+        }
+
+        if (arenaCountdownManager != null) {
+            arenaCountdownManager.cancelAll();
         }
 
         if (
@@ -116,9 +122,13 @@ public final class SpacetimeEnginePlugin
     }
 
     private void initializePlayerSystem() {
+        arenaCountdownManager =
+                new ArenaCountdownManager(this);
+
         arenaPlayerManager =
                 new ArenaPlayerManager(
-                        getArenaManager()
+                        getArenaManager(),
+                        arenaCountdownManager
                 );
     }
 

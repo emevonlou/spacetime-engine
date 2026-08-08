@@ -11,13 +11,15 @@ public final class ArenaPlayerManager {
 
     private final ArenaManager arenaManager;
     private final ArenaCountdownManager countdownManager;
+    private final ArenaLifecycleManager lifecycleManager;
 
     private final Map<UUID, String> playerArenas =
             new HashMap<>();
 
     public ArenaPlayerManager(
             ArenaManager arenaManager,
-            ArenaCountdownManager countdownManager
+            ArenaCountdownManager countdownManager,
+            ArenaLifecycleManager lifecycleManager
     ) {
         this.arenaManager = Objects.requireNonNull(
                 arenaManager,
@@ -27,6 +29,11 @@ public final class ArenaPlayerManager {
         this.countdownManager = Objects.requireNonNull(
                 countdownManager,
                 "ArenaCountdownManager cannot be null."
+        );
+
+        this.lifecycleManager = Objects.requireNonNull(
+                lifecycleManager,
+                "ArenaLifecycleManager cannot be null."
         );
     }
 
@@ -90,7 +97,9 @@ public final class ArenaPlayerManager {
 
         arena.ifPresent(value -> {
             value.removePlayer(playerId);
+
             countdownManager.evaluate(value);
+            lifecycleManager.evaluate(value);
         });
 
         return arena;

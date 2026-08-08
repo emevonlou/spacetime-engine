@@ -2,6 +2,7 @@ package io.github.emevonlou.spacetimeengine;
 
 import io.github.emevonlou.spacetimeengine.arena.Arena;
 import io.github.emevonlou.spacetimeengine.arena.ArenaCountdownManager;
+import io.github.emevonlou.spacetimeengine.arena.ArenaLifecycleManager;
 import io.github.emevonlou.spacetimeengine.arena.ArenaManager;
 import io.github.emevonlou.spacetimeengine.arena.ArenaPlayerManager;
 import io.github.emevonlou.spacetimeengine.arena.ArenaStorage;
@@ -17,6 +18,7 @@ public final class SpacetimeEnginePlugin
 
     private ArenaManager arenaManager;
     private ArenaCountdownManager arenaCountdownManager;
+    private ArenaLifecycleManager arenaLifecycleManager;
     private ArenaPlayerManager arenaPlayerManager;
     private ArenaStorage arenaStorage;
 
@@ -46,6 +48,10 @@ public final class SpacetimeEnginePlugin
 
         if (arenaCountdownManager != null) {
             arenaCountdownManager.cancelAll();
+        }
+
+        if (arenaLifecycleManager != null) {
+            arenaLifecycleManager.cancelAll();
         }
 
         if (
@@ -125,10 +131,14 @@ public final class SpacetimeEnginePlugin
         arenaCountdownManager =
                 new ArenaCountdownManager(this);
 
+        arenaLifecycleManager =
+                new ArenaLifecycleManager(this);
+
         arenaPlayerManager =
                 new ArenaPlayerManager(
                         getArenaManager(),
-                        arenaCountdownManager
+                        arenaCountdownManager,
+                        arenaLifecycleManager
                 );
     }
 

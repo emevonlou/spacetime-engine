@@ -5,6 +5,8 @@ import io.github.emevonlou.spacetimeengine.arena.Arena;
 import io.github.emevonlou.spacetimeengine.arena.ArenaManager;
 import io.github.emevonlou.spacetimeengine.arena.ArenaJoinResult;
 import io.github.emevonlou.spacetimeengine.arena.ArenaState;
+import io.github.emevonlou.spacetimeengine.map.GameMapDefinition;
+import io.github.emevonlou.spacetimeengine.map.MapPoint;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.Command;
@@ -29,6 +31,8 @@ public final class SpacetimeCommand
                     "join",
                     "leave",
                     "limits",
+                    "map",
+                    "maps",
                     "players",
                     "state",
                     "transition"
@@ -71,6 +75,12 @@ public final class SpacetimeCommand
 
             case "limits" ->
                     manageArenaLimits(sender, args);
+
+            case "map" ->
+                    showMap(sender, args);
+
+            case "maps" ->
+                    listMaps(sender);
 
             case "players" ->
                     showArenaPlayers(sender, args);
@@ -399,6 +409,148 @@ public final class SpacetimeCommand
                                 + "/"
                                 + arena.getMaxPlayers(),
                         NamedTextColor.AQUA
+                )
+        );
+
+        return true;
+    }
+
+    private boolean listMaps(
+            CommandSender sender
+    ) {
+        sender.sendMessage(
+                Component.text(
+                        "Registered maps: "
+                                + plugin.getGameMapManager().size(),
+                        NamedTextColor.GOLD
+                )
+        );
+
+        for (
+                GameMapDefinition map
+                : plugin.getGameMapManager().getMaps()
+        ) {
+            sender.sendMessage(
+                    Component.text(
+                            "- "
+                                    + map.getId()
+                                    + " | "
+                                    + map.getDisplayName()
+                                    + " | teams: "
+                                    + map.getTeamCount(),
+                            NamedTextColor.GRAY
+                    )
+            );
+        }
+
+        return true;
+    }
+
+    private boolean showMap(
+            CommandSender sender,
+            String[] args
+    ) {
+        if (args.length != 2) {
+            sender.sendMessage(
+                    Component.text(
+                            "Usage: /spacetime map <map>",
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        GameMapDefinition map;
+
+        try {
+            map = plugin.getGameMapManager()
+                    .findMap(args[1])
+                    .orElse(null);
+        } catch (IllegalArgumentException exception) {
+            sender.sendMessage(
+                    Component.text(
+                            exception.getMessage(),
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        if (map == null) {
+            sender.sendMessage(
+                    Component.text(
+                            "Map not found: " + args[1],
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        sender.sendMessage(
+                Component.text(
+                        map.getDisplayName(),
+                        NamedTextColor.GOLD
+                )
+        );
+
+        sender.sendMessage(
+                Component.text(
+                        "ID: " + map.getId(),
+                        NamedTextColor.GRAY
+                )
+        );
+
+        sender.sendMessage(
+                Component.text(
+                        "World: " + map.getWorldName(),
+                        NamedTextColor.GRAY
+                )
+        );
+
+        sender.sendMessage(
+                Component.text(
+                        "Mode: " + map.getMode(),
+                        NamedTextColor.GRAY
+                )
+        );
+
+        sender.sendMessage(
+                Component.text(
+                        "Teams: " + map.getTeamCount(),
+                        NamedTextColor.AQUA
+                )
+        );
+
+        sender.sendMessage(
+                Component.text(
+                        "Diamond generators: "
+                                + map.getDiamondGenerators().size(),
+                        NamedTextColor.AQUA
+                )
+        );
+
+        sender.sendMessage(
+                Component.text(
+                        "Emerald generators: "
+                                + map.getEmeraldGenerators().size(),
+                        NamedTextColor.AQUA
+                )
+        );
+
+        MapPoint center = map.getCenter();
+
+        sender.sendMessage(
+                Component.text(
+                        "Center: "
+                                + center.x()
+                                + ", "
+                                + center.y()
+                                + ", "
+                                + center.z(),
+                        NamedTextColor.GRAY
                 )
         );
 
@@ -738,7 +890,7 @@ public final class SpacetimeCommand
                 Component.text(
                         "Usage: /"
                                 + label
-                                + " [arenas|create|join|leave|limits|"
+                                + " [arenas|create|join|leave|limits|map|maps|"
                                 + "players|state|transition]",
                         NamedTextColor.YELLOW
                 )
@@ -756,6 +908,16 @@ public final class SpacetimeCommand
             return filterSuggestions(
                     SUBCOMMANDS,
                     args[0]
+            );
+        }
+
+        if (
+                args.length == 2
+                        && args[0].equalsIgnoreCase("map")
+        ) {
+            return filterSuggestions(
+                    plugin.getGameMapManager().getMapIds(),
+                    args[1]
             );
         }
 

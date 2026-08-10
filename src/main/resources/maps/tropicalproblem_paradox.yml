@@ -1,0 +1,112 @@
+schema-version: 1
+
+id: tropicalproblem_paradox
+display-name: Tropical Problem Paradox
+world: bw_tropicalproblem_paradox
+mode: eight-teams
+
+center:
+  x: 0
+  y: 74
+  z: 0
+  yaw: 0
+  pitch: 0
+
+spectator-spawn:
+  x: 0
+  y: 100
+  z: 0
+  yaw: 0
+  pitch: 90
+
+teams:
+  red:
+    base-anchor:
+      x: 0
+      y: 70
+      z: -88
+
+  blue:
+    base-anchor:
+      x: 62
+      y: 70
+      z: -62
+
+  green:
+    base-anchor:
+      x: 88
+      y: 70
+      z: 0
+
+  yellow:
+    base-anchor:
+      x: 62
+      y: 70
+      z: 62
+
+  white:
+    base-anchor:
+      x: 0
+      y: 70
+      z: 88
+
+  aqua:
+    base-anchor:
+      x: -62
+      y: 70
+      z: 62
+
+  gray:
+    base-anchor:
+      x: -88
+      y: 70
+      z: 0
+
+  pink:
+    base-anchor:
+      x: -62
+      y: 70
+      z: -62
+
+generators:
+  diamond:
+    northwest:
+      x: -32
+      y: 72
+      z: -32
+
+    northeast:
+      x: 32
+      y: 72
+      z: -32
+
+    southwest:
+      x: -32
+      y: 72
+      z: 32
+
+    southeast:
+      x: 32
+      y: 72
+      z: 32
+
+  emerald:
+    north:
+      x: 0
+      y: 74
+      z: -14
+
+    east:
+      x: 14
+      y: 74
+      z: 0
+
+    south:
+      x: 0
+      y: 74
+      z: 14
+
+    west:
+      x: -14
+      y: 74
+      z: 0

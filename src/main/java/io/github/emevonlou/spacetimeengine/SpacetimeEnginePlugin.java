@@ -8,6 +8,9 @@ import io.github.emevonlou.spacetimeengine.arena.ArenaPlayerManager;
 import io.github.emevonlou.spacetimeengine.arena.ArenaStorage;
 import io.github.emevonlou.spacetimeengine.command.SpacetimeCommand;
 import io.github.emevonlou.spacetimeengine.listener.PlayerConnectionListener;
+import io.github.emevonlou.spacetimeengine.map.GameMapDefinition;
+import io.github.emevonlou.spacetimeengine.map.GameMapManager;
+import io.github.emevonlou.spacetimeengine.map.MapStorage;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -21,10 +24,13 @@ public final class SpacetimeEnginePlugin
     private ArenaLifecycleManager arenaLifecycleManager;
     private ArenaPlayerManager arenaPlayerManager;
     private ArenaStorage arenaStorage;
+    private GameMapManager gameMapManager;
+    private MapStorage mapStorage;
 
     @Override
     public void onEnable() {
         initializeArenaSystem();
+        initializeMapSystem();
         initializePlayerSystem();
 
         registerCommands();
@@ -70,6 +76,13 @@ public final class SpacetimeEnginePlugin
         return Objects.requireNonNull(
                 arenaManager,
                 "ArenaManager has not been initialized."
+        );
+    }
+
+    public GameMapManager getGameMapManager() {
+        return Objects.requireNonNull(
+                gameMapManager,
+                "GameMapManager has not been initialized."
         );
     }
 
@@ -125,6 +138,34 @@ public final class SpacetimeEnginePlugin
                             + "durante a inicialização."
             );
         }
+    }
+
+    private void initializeMapSystem() {
+        mapStorage = new MapStorage(this);
+        mapStorage.installBundledMaps();
+
+        gameMapManager = new GameMapManager();
+
+        int loadedMaps = 0;
+
+        for (
+                GameMapDefinition map
+                : mapStorage.loadMaps()
+        ) {
+            try {
+                gameMapManager.registerMap(map);
+                loadedMaps++;
+            } catch (IllegalArgumentException exception) {
+                getLogger().warning(
+                        "Mapa ignorado: "
+                                + exception.getMessage()
+                );
+            }
+        }
+
+        getLogger().info(
+                "Mapas carregados: " + loadedMaps
+        );
     }
 
     private void initializePlayerSystem() {

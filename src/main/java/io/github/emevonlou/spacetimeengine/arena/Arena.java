@@ -3,6 +3,7 @@ package io.github.emevonlou.spacetimeengine.arena;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -12,6 +13,7 @@ public final class Arena {
     public static final int DEFAULT_MAX_PLAYERS = 8;
 
     private final String id;
+    private final String mapId;
     private final Set<UUID> playerIds = new LinkedHashSet<>();
 
     private ArenaState state;
@@ -22,7 +24,8 @@ public final class Arena {
         this(
                 id,
                 DEFAULT_MIN_PLAYERS,
-                DEFAULT_MAX_PLAYERS
+                DEFAULT_MAX_PLAYERS,
+                null
         );
     }
 
@@ -31,7 +34,22 @@ public final class Arena {
             int minPlayers,
             int maxPlayers
     ) {
+        this(
+                id,
+                minPlayers,
+                maxPlayers,
+                null
+        );
+    }
+
+    public Arena(
+            String id,
+            int minPlayers,
+            int maxPlayers,
+            String mapId
+    ) {
         this.id = normalizeId(id);
+        this.mapId = normalizeOptionalMapId(mapId);
 
         validatePlayerLimits(
                 minPlayers,
@@ -45,6 +63,10 @@ public final class Arena {
 
     public String getId() {
         return id;
+    }
+
+    public Optional<String> getMapId() {
+        return Optional.ofNullable(mapId);
     }
 
     public ArenaState getState() {
@@ -161,6 +183,27 @@ public final class Arena {
         }
 
         return normalizedId;
+    }
+
+    private static String normalizeOptionalMapId(
+            String mapId
+    ) {
+        if (mapId == null || mapId.isBlank()) {
+            return null;
+        }
+
+        String normalizedMapId = mapId
+                .trim()
+                .toLowerCase(Locale.ROOT);
+
+        if (!normalizedMapId.matches("[a-z0-9_-]+")) {
+            throw new IllegalArgumentException(
+                    "Map id may only contain lowercase letters, "
+                            + "numbers, hyphens and underscores."
+            );
+        }
+
+        return normalizedMapId;
     }
 
     public static void validatePlayerLimits(

@@ -31,6 +31,22 @@ public final class ArenaManager {
         );
     }
 
+    public Arena createArena(
+            String id,
+            int minPlayers,
+            int maxPlayers,
+            String mapId
+    ) {
+        return registerArena(
+                new Arena(
+                        id,
+                        minPlayers,
+                        maxPlayers,
+                        mapId
+                )
+        );
+    }
+
     public Arena registerArena(Arena arena) {
         Objects.requireNonNull(
                 arena,

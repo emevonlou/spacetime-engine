@@ -26,6 +26,7 @@ public final class SpacetimeCommand
 
     private static final List<String> SUBCOMMANDS =
             List.of(
+                    "arena",
                     "arenas",
                     "create",
                     "join",
@@ -61,6 +62,9 @@ public final class SpacetimeCommand
         return switch (
                 args[0].toLowerCase(Locale.ROOT)
         ) {
+            case "arena" ->
+                    showArena(sender, args);
+
             case "arenas" ->
                     listArenas(sender);
 
@@ -159,6 +163,142 @@ public final class SpacetimeCommand
         return true;
     }
 
+    private boolean showArena(
+            CommandSender sender,
+            String[] args
+    ) {
+        if (args.length != 2) {
+            sender.sendMessage(
+                    Component.text(
+                            "Usage: /spacetime arena <arena>",
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        Arena arena;
+
+        try {
+            arena = plugin.getArenaManager()
+                    .findArena(args[1])
+                    .orElse(null);
+        } catch (IllegalArgumentException exception) {
+            sender.sendMessage(
+                    Component.text(
+                            exception.getMessage(),
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        if (arena == null) {
+            sender.sendMessage(
+                    Component.text(
+                            "Arena not found: " + args[1],
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        sender.sendMessage(
+                Component.text(
+                        "Arena: " + arena.getId(),
+                        NamedTextColor.GOLD
+                )
+        );
+
+        sender.sendMessage(
+                Component.text(
+                        "State: " + arena.getState(),
+                        NamedTextColor.GRAY
+                )
+        );
+
+        sender.sendMessage(
+                Component.text(
+                        "Players: "
+                                + arena.getPlayerCount()
+                                + "/"
+                                + arena.getMaxPlayers()
+                                + " | minimum: "
+                                + arena.getMinPlayers(),
+                        NamedTextColor.GRAY
+                )
+        );
+
+        if (arena.getMapId().isEmpty()) {
+            sender.sendMessage(
+                    Component.text(
+                            "Map: unassigned",
+                            NamedTextColor.DARK_GRAY
+                    )
+            );
+
+            return true;
+        }
+
+        String mapId = arena.getMapId().orElseThrow();
+
+        GameMapDefinition map =
+                plugin.getGameMapManager()
+                        .findMap(mapId)
+                        .orElse(null);
+
+        if (map == null) {
+            sender.sendMessage(
+                    Component.text(
+                            "Map unavailable: " + mapId,
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        sender.sendMessage(
+                Component.text(
+                        "Map: " + map.getDisplayName(),
+                        NamedTextColor.AQUA
+                )
+        );
+
+        sender.sendMessage(
+                Component.text(
+                        "Map ID: " + map.getId(),
+                        NamedTextColor.GRAY
+                )
+        );
+
+        sender.sendMessage(
+                Component.text(
+                        "World: " + map.getWorldName(),
+                        NamedTextColor.GRAY
+                )
+        );
+
+        sender.sendMessage(
+                Component.text(
+                        "Mode: " + map.getMode(),
+                        NamedTextColor.GRAY
+                )
+        );
+
+        sender.sendMessage(
+                Component.text(
+                        "Teams: " + map.getTeamCount(),
+                        NamedTextColor.GRAY
+                )
+        );
+
+        return true;
+    }
+
     private boolean createArena(
             CommandSender sender,
             String[] args
@@ -170,11 +310,12 @@ public final class SpacetimeCommand
         if (
                 args.length != 2
                         && args.length != 4
+                        && args.length != 5
         ) {
             sender.sendMessage(
                     Component.text(
                             "Usage: /spacetime create "
-                                    + "<arena> [min] [max]",
+                                    + "<arena> [min] [max] [map]",
                             NamedTextColor.RED
                     )
             );
@@ -208,12 +349,39 @@ public final class SpacetimeCommand
                     return true;
                 }
 
-                arena = plugin.getArenaManager()
-                        .createArena(
-                                args[1],
-                                minPlayers,
-                                maxPlayers
+                if (args.length == 5) {
+                    GameMapDefinition map =
+                            plugin.getGameMapManager()
+                                    .findMap(args[4])
+                                    .orElse(null);
+
+                    if (map == null) {
+                        sender.sendMessage(
+                                Component.text(
+                                        "Map not found: "
+                                                + args[4],
+                                        NamedTextColor.RED
+                                )
                         );
+
+                        return true;
+                    }
+
+                    arena = plugin.getArenaManager()
+                            .createArena(
+                                    args[1],
+                                    minPlayers,
+                                    maxPlayers,
+                                    map.getId()
+                            );
+                } else {
+                    arena = plugin.getArenaManager()
+                            .createArena(
+                                    args[1],
+                                    minPlayers,
+                                    maxPlayers
+                            );
+                }
             }
 
             if (!plugin.saveArenas()) {
@@ -229,10 +397,19 @@ public final class SpacetimeCommand
                 return true;
             }
 
+            String mapInformation =
+                    arena.getMapId()
+                            .map(
+                                    mapId ->
+                                            " | map: " + mapId
+                            )
+                            .orElse("");
+
             sender.sendMessage(
                     Component.text(
                             "Arena created and saved: "
-                                    + arena.getId(),
+                                    + arena.getId()
+                                    + mapInformation,
                             NamedTextColor.GREEN
                     )
             );
@@ -890,7 +1067,7 @@ public final class SpacetimeCommand
                 Component.text(
                         "Usage: /"
                                 + label
-                                + " [arenas|create|join|leave|limits|map|maps|"
+                                + " [arena|arenas|create|join|leave|limits|map|maps|"
                                 + "players|state|transition]",
                         NamedTextColor.YELLOW
                 )
@@ -908,6 +1085,16 @@ public final class SpacetimeCommand
             return filterSuggestions(
                     SUBCOMMANDS,
                     args[0]
+            );
+        }
+
+        if (
+                args.length == 2
+                        && args[0].equalsIgnoreCase("arena")
+        ) {
+            return filterSuggestions(
+                    plugin.getArenaManager().getArenaIds(),
+                    args[1]
             );
         }
 

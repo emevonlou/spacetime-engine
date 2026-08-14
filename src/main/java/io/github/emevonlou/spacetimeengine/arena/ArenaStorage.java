@@ -15,7 +15,7 @@ import java.util.logging.Level;
 
 public final class ArenaStorage {
 
-    private static final int SCHEMA_VERSION = 2;
+    private static final int SCHEMA_VERSION = 3;
 
     private final JavaPlugin plugin;
     private final File file;
@@ -66,12 +66,17 @@ public final class ArenaStorage {
                     Arena.DEFAULT_MAX_PLAYERS
             );
 
+            String mapId = arenasSection.getString(
+                    arenaId + ".map"
+            );
+
             try {
                 arenas.add(
                         new Arena(
                                 arenaId,
                                 minPlayers,
-                                maxPlayers
+                                maxPlayers,
+                                mapId
                         )
                 );
             } catch (IllegalArgumentException exception) {
@@ -151,6 +156,13 @@ public final class ArenaStorage {
                 .forEach(arena -> {
                     String path =
                             "arenas." + arena.getId();
+
+                    arena.getMapId().ifPresent(
+                            mapId -> configuration.set(
+                                    path + ".map",
+                                    mapId
+                            )
+                    );
 
                     configuration.set(
                             path + ".min-players",

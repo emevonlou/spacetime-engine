@@ -7,6 +7,7 @@ import io.github.emevonlou.spacetimeengine.arena.ArenaJoinResult;
 import io.github.emevonlou.spacetimeengine.arena.ArenaState;
 import io.github.emevonlou.spacetimeengine.map.GameMapDefinition;
 import io.github.emevonlou.spacetimeengine.map.MapPoint;
+import io.github.emevonlou.spacetimeengine.team.TeamDefinition;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.Command;
@@ -36,6 +37,8 @@ public final class SpacetimeCommand
                     "maps",
                     "players",
                     "state",
+                    "team",
+                    "teams",
                     "transition"
             );
 
@@ -91,6 +94,12 @@ public final class SpacetimeCommand
 
             case "state" ->
                     showArenaState(sender, args);
+
+            case "team" ->
+                    showTeam(sender, args);
+
+            case "teams" ->
+                    listTeams(sender, args);
 
             case "transition" ->
                     transitionArena(sender, args);
@@ -850,6 +859,217 @@ public final class SpacetimeCommand
         return true;
     }
 
+    private boolean listTeams(
+            CommandSender sender,
+            String[] args
+    ) {
+        if (args.length != 2) {
+            sender.sendMessage(
+                    Component.text(
+                            "Usage: /spacetime teams <arena>",
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        Arena arena = findArenaOrNotify(
+                sender,
+                args[1]
+        );
+
+        if (arena == null) {
+            return true;
+        }
+
+        if (arena.getMapId().isEmpty()) {
+            sender.sendMessage(
+                    Component.text(
+                            "Arena has no map assigned: "
+                                    + arena.getId(),
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        String mapId = arena.getMapId().orElseThrow();
+
+        GameMapDefinition map =
+                plugin.getGameMapManager()
+                        .findMap(mapId)
+                        .orElse(null);
+
+        if (map == null) {
+            sender.sendMessage(
+                    Component.text(
+                            "Map unavailable: " + mapId,
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        sender.sendMessage(
+                Component.text(
+                        "Teams for "
+                                + arena.getId()
+                                + " / "
+                                + map.getDisplayName()
+                                + ": "
+                                + map.getTeamCount(),
+                        NamedTextColor.GOLD
+                )
+        );
+
+        for (
+                TeamDefinition team
+                : map.getTeams().values()
+        ) {
+            sender.sendMessage(
+                    Component.text(
+                            "- "
+                                    + team.getId()
+                                    + " | "
+                                    + team.getDisplayName(),
+                            NamedTextColor.GRAY
+                    )
+            );
+        }
+
+        return true;
+    }
+
+    private boolean showTeam(
+            CommandSender sender,
+            String[] args
+    ) {
+        if (args.length != 3) {
+            sender.sendMessage(
+                    Component.text(
+                            "Usage: /spacetime team "
+                                    + "<arena> <team>",
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        Arena arena = findArenaOrNotify(
+                sender,
+                args[1]
+        );
+
+        if (arena == null) {
+            return true;
+        }
+
+        if (arena.getMapId().isEmpty()) {
+            sender.sendMessage(
+                    Component.text(
+                            "Arena has no map assigned: "
+                                    + arena.getId(),
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        String mapId = arena.getMapId().orElseThrow();
+
+        GameMapDefinition map =
+                plugin.getGameMapManager()
+                        .findMap(mapId)
+                        .orElse(null);
+
+        if (map == null) {
+            sender.sendMessage(
+                    Component.text(
+                            "Map unavailable: " + mapId,
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        TeamDefinition team;
+
+        try {
+            team = map.findTeam(args[2])
+                    .orElse(null);
+        } catch (IllegalArgumentException exception) {
+            sender.sendMessage(
+                    Component.text(
+                            exception.getMessage(),
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        if (team == null) {
+            sender.sendMessage(
+                    Component.text(
+                            "Team not found: " + args[2],
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        MapPoint base = team.getBaseAnchor();
+
+        sender.sendMessage(
+                Component.text(
+                        "Team: " + team.getDisplayName(),
+                        NamedTextColor.GOLD
+                )
+        );
+
+        sender.sendMessage(
+                Component.text(
+                        "ID: " + team.getId(),
+                        NamedTextColor.GRAY
+                )
+        );
+
+        sender.sendMessage(
+                Component.text(
+                        "Arena: " + arena.getId(),
+                        NamedTextColor.GRAY
+                )
+        );
+
+        sender.sendMessage(
+                Component.text(
+                        "Map: " + map.getDisplayName(),
+                        NamedTextColor.AQUA
+                )
+        );
+
+        sender.sendMessage(
+                Component.text(
+                        "Base anchor: "
+                                + base.x()
+                                + ", "
+                                + base.y()
+                                + ", "
+                                + base.z(),
+                        NamedTextColor.GRAY
+                )
+        );
+
+        return true;
+    }
+
     private boolean showArenaState(
             CommandSender sender,
             String[] args
@@ -1068,7 +1288,7 @@ public final class SpacetimeCommand
                         "Usage: /"
                                 + label
                                 + " [arena|arenas|create|join|leave|limits|map|maps|"
-                                + "players|state|transition]",
+                                + "players|state|team|teams|transition]",
                         NamedTextColor.YELLOW
                 )
         );
@@ -1086,6 +1306,57 @@ public final class SpacetimeCommand
                     SUBCOMMANDS,
                     args[0]
             );
+        }
+
+        if (
+                args.length == 2
+                        && (
+                        args[0].equalsIgnoreCase("team")
+                                || args[0].equalsIgnoreCase("teams")
+                )
+        ) {
+            return filterSuggestions(
+                    plugin.getArenaManager().getArenaIds(),
+                    args[1]
+            );
+        }
+
+        if (
+                args.length == 3
+                        && args[0].equalsIgnoreCase("team")
+        ) {
+            try {
+                Arena arena =
+                        plugin.getArenaManager()
+                                .findArena(args[1])
+                                .orElse(null);
+
+                if (
+                        arena == null
+                                || arena.getMapId().isEmpty()
+                ) {
+                    return List.of();
+                }
+
+                GameMapDefinition map =
+                        plugin.getGameMapManager()
+                                .findMap(
+                                        arena.getMapId()
+                                                .orElseThrow()
+                                )
+                                .orElse(null);
+
+                if (map == null) {
+                    return List.of();
+                }
+
+                return filterSuggestions(
+                        map.getTeamIds(),
+                        args[2]
+                );
+            } catch (IllegalArgumentException exception) {
+                return List.of();
+            }
         }
 
         if (

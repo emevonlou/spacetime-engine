@@ -1,5 +1,7 @@
 package io.github.emevonlou.spacetimeengine.map;
 
+import io.github.emevonlou.spacetimeengine.team.TeamDefinition;
+
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -141,19 +143,35 @@ public final class MapStorage {
                         "teams"
                 );
 
-        Map<String, MapPoint> teamBaseAnchors =
+        Map<String, TeamDefinition> teams =
                 new LinkedHashMap<>();
 
         for (
                 String teamId
                 : teamsSection.getKeys(false)
         ) {
-            teamBaseAnchors.put(
-                    teamId.toLowerCase(),
-                    readPoint(
-                            teamsSection,
-                            teamId + ".base-anchor"
-                    )
+            String normalizedTeamId =
+                    TeamDefinition.normalizeId(teamId);
+
+            String teamDisplayName =
+                    teamsSection.getString(
+                            teamId + ".display-name",
+                            formatDisplayName(normalizedTeamId)
+                    );
+
+            TeamDefinition team =
+                    new TeamDefinition(
+                            normalizedTeamId,
+                            teamDisplayName,
+                            readPoint(
+                                    teamsSection,
+                                    teamId + ".base-anchor"
+                            )
+                    );
+
+            teams.put(
+                    team.getId(),
+                    team
             );
         }
 
@@ -176,10 +194,22 @@ public final class MapStorage {
                 mode,
                 center,
                 spectatorSpawn,
-                teamBaseAnchors,
+                teams,
                 diamondGenerators,
                 emeraldGenerators
         );
+    }
+
+    private String formatDisplayName(
+            String teamId
+    ) {
+        if (teamId.isEmpty()) {
+            return teamId;
+        }
+
+        return Character.toUpperCase(
+                teamId.charAt(0)
+        ) + teamId.substring(1);
     }
 
     private Map<String, MapPoint> readNamedPoints(

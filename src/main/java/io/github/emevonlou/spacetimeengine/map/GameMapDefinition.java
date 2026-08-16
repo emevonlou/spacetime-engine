@@ -1,9 +1,15 @@
 package io.github.emevonlou.spacetimeengine.map;
 
+import io.github.emevonlou.spacetimeengine.team.TeamDefinition;
+
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Optional;
 
 public final class GameMapDefinition {
 
@@ -15,7 +21,7 @@ public final class GameMapDefinition {
     private final MapPoint center;
     private final MapPoint spectatorSpawn;
 
-    private final Map<String, MapPoint> teamBaseAnchors;
+    private final Map<String, TeamDefinition> teams;
     private final Map<String, MapPoint> diamondGenerators;
     private final Map<String, MapPoint> emeraldGenerators;
 
@@ -26,7 +32,7 @@ public final class GameMapDefinition {
             String mode,
             MapPoint center,
             MapPoint spectatorSpawn,
-            Map<String, MapPoint> teamBaseAnchors,
+            Map<String, TeamDefinition> teams,
             Map<String, MapPoint> diamondGenerators,
             Map<String, MapPoint> emeraldGenerators
     ) {
@@ -57,10 +63,12 @@ public final class GameMapDefinition {
                 "Spectator spawn cannot be null."
         );
 
-        this.teamBaseAnchors = Map.copyOf(
-                Objects.requireNonNull(
-                        teamBaseAnchors,
-                        "Team base anchors cannot be null."
+        this.teams = Collections.unmodifiableMap(
+                new LinkedHashMap<>(
+                        Objects.requireNonNull(
+                                teams,
+                                "Teams cannot be null."
+                        )
                 )
         );
 
@@ -103,8 +111,8 @@ public final class GameMapDefinition {
         return spectatorSpawn;
     }
 
-    public Map<String, MapPoint> getTeamBaseAnchors() {
-        return teamBaseAnchors;
+    public Map<String, TeamDefinition> getTeams() {
+        return teams;
     }
 
     public Map<String, MapPoint> getDiamondGenerators() {
@@ -115,14 +123,29 @@ public final class GameMapDefinition {
         return emeraldGenerators;
     }
 
+    public Optional<TeamDefinition> findTeam(
+            String id
+    ) {
+        if (id == null || id.isBlank()) {
+            return Optional.empty();
+        }
+
+        String normalizedId =
+                TeamDefinition.normalizeId(id);
+
+        return Optional.ofNullable(
+                teams.get(normalizedId)
+        );
+    }
+
     public List<String> getTeamIds() {
         return List.copyOf(
-                teamBaseAnchors.keySet()
+                teams.keySet()
         );
     }
 
     public int getTeamCount() {
-        return teamBaseAnchors.size();
+        return teams.size();
     }
 
     public static String normalizeId(String id) {

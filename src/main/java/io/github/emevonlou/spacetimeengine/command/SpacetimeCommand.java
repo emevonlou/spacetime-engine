@@ -7,7 +7,7 @@ import io.github.emevonlou.spacetimeengine.arena.ArenaJoinResult;
 import io.github.emevonlou.spacetimeengine.arena.ArenaState;
 import io.github.emevonlou.spacetimeengine.map.GameMapDefinition;
 import io.github.emevonlou.spacetimeengine.map.MapPoint;
-import io.github.emevonlou.spacetimeengine.team.TeamDefinition;
+import io.github.emevonlou.spacetimeengine.team.ArenaTeam;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.Command;
@@ -895,7 +895,8 @@ public final class SpacetimeCommand
             return true;
         }
 
-        String mapId = arena.getMapId().orElseThrow();
+        String mapId =
+                arena.getMapId().orElseThrow();
 
         GameMapDefinition map =
                 plugin.getGameMapManager()
@@ -913,28 +914,32 @@ public final class SpacetimeCommand
             return true;
         }
 
+        var arenaTeams =
+                plugin.getArenaTeamManager()
+                        .getTeams(arena);
+
         sender.sendMessage(
                 Component.text(
-                        "Teams for "
+                        "Runtime teams for "
                                 + arena.getId()
                                 + " / "
                                 + map.getDisplayName()
                                 + ": "
-                                + map.getTeamCount(),
+                                + arenaTeams.size(),
                         NamedTextColor.GOLD
                 )
         );
 
-        for (
-                TeamDefinition team
-                : map.getTeams().values()
-        ) {
+        for (ArenaTeam team : arenaTeams) {
             sender.sendMessage(
                     Component.text(
                             "- "
                                     + team.getId()
                                     + " | "
-                                    + team.getDisplayName(),
+                                    + team.getDefinition()
+                                            .getDisplayName()
+                                    + " | players: "
+                                    + team.getPlayerCount(),
                             NamedTextColor.GRAY
                     )
             );
@@ -980,7 +985,8 @@ public final class SpacetimeCommand
             return true;
         }
 
-        String mapId = arena.getMapId().orElseThrow();
+        String mapId =
+                arena.getMapId().orElseThrow();
 
         GameMapDefinition map =
                 plugin.getGameMapManager()
@@ -998,10 +1004,14 @@ public final class SpacetimeCommand
             return true;
         }
 
-        TeamDefinition team;
+        ArenaTeam team;
 
         try {
-            team = map.findTeam(args[2])
+            team = plugin.getArenaTeamManager()
+                    .findTeam(
+                            arena,
+                            args[2]
+                    )
                     .orElse(null);
         } catch (IllegalArgumentException exception) {
             sender.sendMessage(
@@ -1025,11 +1035,15 @@ public final class SpacetimeCommand
             return true;
         }
 
-        MapPoint base = team.getBaseAnchor();
+        MapPoint base =
+                team.getDefinition()
+                        .getBaseAnchor();
 
         sender.sendMessage(
                 Component.text(
-                        "Team: " + team.getDisplayName(),
+                        "Team: "
+                                + team.getDefinition()
+                                    .getDisplayName(),
                         NamedTextColor.GOLD
                 )
         );
@@ -1043,15 +1057,23 @@ public final class SpacetimeCommand
 
         sender.sendMessage(
                 Component.text(
-                        "Arena: " + arena.getId(),
+                        "Arena: " + team.getArenaId(),
                         NamedTextColor.GRAY
                 )
         );
 
         sender.sendMessage(
                 Component.text(
-                        "Map: " + map.getDisplayName(),
+                        "Players: "
+                                + team.getPlayerCount(),
                         NamedTextColor.AQUA
+                )
+        );
+
+        sender.sendMessage(
+                Component.text(
+                        "Map: " + map.getDisplayName(),
+                        NamedTextColor.GRAY
                 )
         );
 

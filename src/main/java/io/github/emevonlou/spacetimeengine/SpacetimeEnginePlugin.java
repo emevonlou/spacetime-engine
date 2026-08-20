@@ -11,6 +11,7 @@ import io.github.emevonlou.spacetimeengine.listener.PlayerConnectionListener;
 import io.github.emevonlou.spacetimeengine.map.GameMapDefinition;
 import io.github.emevonlou.spacetimeengine.map.GameMapManager;
 import io.github.emevonlou.spacetimeengine.map.MapStorage;
+import io.github.emevonlou.spacetimeengine.team.ArenaTeamManager;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -26,11 +27,13 @@ public final class SpacetimeEnginePlugin
     private ArenaStorage arenaStorage;
     private GameMapManager gameMapManager;
     private MapStorage mapStorage;
+    private ArenaTeamManager arenaTeamManager;
 
     @Override
     public void onEnable() {
         initializeArenaSystem();
         initializeMapSystem();
+        initializeTeamSystem();
         initializePlayerSystem();
 
         registerCommands();
@@ -60,6 +63,10 @@ public final class SpacetimeEnginePlugin
             arenaLifecycleManager.cancelAll();
         }
 
+        if (arenaTeamManager != null) {
+            arenaTeamManager.clear();
+        }
+
         if (
                 arenaManager != null
                         && arenaStorage != null
@@ -83,6 +90,13 @@ public final class SpacetimeEnginePlugin
         return Objects.requireNonNull(
                 gameMapManager,
                 "GameMapManager has not been initialized."
+        );
+    }
+
+    public ArenaTeamManager getArenaTeamManager() {
+        return Objects.requireNonNull(
+                arenaTeamManager,
+                "ArenaTeamManager has not been initialized."
         );
     }
 
@@ -166,6 +180,13 @@ public final class SpacetimeEnginePlugin
         getLogger().info(
                 "Mapas carregados: " + loadedMaps
         );
+    }
+
+    private void initializeTeamSystem() {
+        arenaTeamManager =
+                new ArenaTeamManager(
+                        getGameMapManager()
+                );
     }
 
     private void initializePlayerSystem() {

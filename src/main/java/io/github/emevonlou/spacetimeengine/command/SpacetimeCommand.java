@@ -511,6 +511,15 @@ public final class SpacetimeCommand
                                     NamedTextColor.RED
                             )
                     );
+
+            case TEAM_ASSIGNMENT_UNAVAILABLE ->
+                    sender.sendMessage(
+                            Component.text(
+                                    "Arena teams are unavailable: "
+                                            + arena.getId(),
+                                    NamedTextColor.RED
+                            )
+                    );
         }
 
         return true;

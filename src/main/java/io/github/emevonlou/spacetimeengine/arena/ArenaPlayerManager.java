@@ -1,5 +1,8 @@
 package io.github.emevonlou.spacetimeengine.arena;
 
+import io.github.emevonlou.spacetimeengine.team.ArenaTeam;
+import io.github.emevonlou.spacetimeengine.team.ArenaTeamManager;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -12,6 +15,7 @@ public final class ArenaPlayerManager {
     private final ArenaManager arenaManager;
     private final ArenaCountdownManager countdownManager;
     private final ArenaLifecycleManager lifecycleManager;
+    private final ArenaTeamManager teamManager;
 
     private final Map<UUID, String> playerArenas =
             new HashMap<>();
@@ -19,7 +23,8 @@ public final class ArenaPlayerManager {
     public ArenaPlayerManager(
             ArenaManager arenaManager,
             ArenaCountdownManager countdownManager,
-            ArenaLifecycleManager lifecycleManager
+            ArenaLifecycleManager lifecycleManager,
+            ArenaTeamManager teamManager
     ) {
         this.arenaManager = Objects.requireNonNull(
                 arenaManager,
@@ -34,6 +39,11 @@ public final class ArenaPlayerManager {
         this.lifecycleManager = Objects.requireNonNull(
                 lifecycleManager,
                 "ArenaLifecycleManager cannot be null."
+        );
+
+        this.teamManager = Objects.requireNonNull(
+                teamManager,
+                "ArenaTeamManager cannot be null."
         );
     }
 
@@ -67,6 +77,21 @@ public final class ArenaPlayerManager {
             return ArenaJoinResult.ALREADY_IN_ARENA;
         }
 
+        if (arena.getMapId().isPresent()) {
+            Optional<ArenaTeam> assignedTeam =
+                    teamManager.assignPlayer(
+                            arena,
+                            playerId
+                    );
+
+            if (assignedTeam.isEmpty()) {
+                arena.removePlayer(playerId);
+
+                return ArenaJoinResult
+                        .TEAM_ASSIGNMENT_UNAVAILABLE;
+            }
+        }
+
         playerArenas.put(
                 playerId,
                 arena.getId()
@@ -96,6 +121,11 @@ public final class ArenaPlayerManager {
                 arenaManager.findArena(arenaId);
 
         arena.ifPresent(value -> {
+            teamManager.removePlayer(
+                    value,
+                    playerId
+            );
+
             value.removePlayer(playerId);
 
             countdownManager.evaluate(value);

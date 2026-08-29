@@ -200,7 +200,8 @@ public final class SpacetimeEnginePlugin
                 new ArenaPlayerManager(
                         getArenaManager(),
                         arenaCountdownManager,
-                        arenaLifecycleManager
+                        arenaLifecycleManager,
+                        getArenaTeamManager()
                 );
     }
 

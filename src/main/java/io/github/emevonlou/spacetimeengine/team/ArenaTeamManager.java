@@ -4,11 +4,13 @@ import io.github.emevonlou.spacetimeengine.arena.Arena;
 import io.github.emevonlou.spacetimeengine.map.GameMapDefinition;
 import io.github.emevonlou.spacetimeengine.map.GameMapManager;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 public final class ArenaTeamManager {
 
@@ -16,6 +18,9 @@ public final class ArenaTeamManager {
 
     private final Map<String, Map<String, ArenaTeam>>
             teamsByArena = new LinkedHashMap<>();
+
+    private final Map<UUID, ArenaTeam> playerTeams =
+            new HashMap<>();
 
     public ArenaTeamManager(
             GameMapManager gameMapManager
@@ -61,6 +66,123 @@ public final class ArenaTeamManager {
         );
     }
 
+    public Optional<ArenaTeam> findTeamByPlayer(
+            UUID playerId
+    ) {
+        Objects.requireNonNull(
+                playerId,
+                "Player UUID cannot be null."
+        );
+
+        return Optional.ofNullable(
+                playerTeams.get(playerId)
+        );
+    }
+
+    public Optional<ArenaTeam> assignPlayer(
+            Arena arena,
+            UUID playerId
+    ) {
+        Objects.requireNonNull(
+                arena,
+                "Arena cannot be null."
+        );
+
+        Objects.requireNonNull(
+                playerId,
+                "Player UUID cannot be null."
+        );
+
+        if (!arena.getPlayerIds().contains(playerId)) {
+            throw new IllegalStateException(
+                    "Player must belong to the arena "
+                            + "before team assignment."
+            );
+        }
+
+        ArenaTeam existing =
+                playerTeams.get(playerId);
+
+        if (existing != null) {
+            if (
+                    existing.getArenaId()
+                            .equals(arena.getId())
+            ) {
+                return Optional.of(existing);
+            }
+
+            throw new IllegalStateException(
+                    "Player is already assigned "
+                            + "to another arena team."
+            );
+        }
+
+        List<ArenaTeam> teams =
+                getTeams(arena);
+
+        if (teams.isEmpty()) {
+            return Optional.empty();
+        }
+
+        ArenaTeam selected =
+                selectLeastPopulatedTeam(teams);
+
+        if (!selected.addPlayer(playerId)) {
+            throw new IllegalStateException(
+                    "Player could not be added "
+                            + "to team "
+                            + selected.getId()
+                            + "."
+            );
+        }
+
+        playerTeams.put(
+                playerId,
+                selected
+        );
+
+        return Optional.of(selected);
+    }
+
+    public Optional<ArenaTeam> removePlayer(
+            Arena arena,
+            UUID playerId
+    ) {
+        Objects.requireNonNull(
+                arena,
+                "Arena cannot be null."
+        );
+
+        Objects.requireNonNull(
+                playerId,
+                "Player UUID cannot be null."
+        );
+
+        ArenaTeam team =
+                playerTeams.get(playerId);
+
+        if (team == null) {
+            return Optional.empty();
+        }
+
+        if (
+                !team.getArenaId()
+                        .equals(arena.getId())
+        ) {
+            throw new IllegalStateException(
+                    "Player team does not belong "
+                            + "to arena "
+                            + arena.getId()
+                            + "."
+            );
+        }
+
+        playerTeams.remove(playerId);
+        team.removePlayer(playerId);
+
+        return Optional.of(team);
+    }
+
     public int getTeamCount(
             Arena arena
     ) {
@@ -85,6 +207,10 @@ public final class ArenaTeamManager {
         }
 
         for (ArenaTeam team : teams.values()) {
+            for (UUID playerId : team.getPlayerIds()) {
+                playerTeams.remove(playerId);
+            }
+
             team.clearPlayers();
         }
     }
@@ -99,7 +225,32 @@ public final class ArenaTeamManager {
             }
         }
 
+        playerTeams.clear();
         teamsByArena.clear();
+    }
+
+    private ArenaTeam selectLeastPopulatedTeam(
+            List<ArenaTeam> teams
+    ) {
+        ArenaTeam selected = null;
+
+        for (ArenaTeam team : teams) {
+            if (
+                    selected == null
+                            || team.getPlayerCount()
+                            < selected.getPlayerCount()
+            ) {
+                selected = team;
+            }
+        }
+
+        if (selected == null) {
+            throw new IllegalStateException(
+                    "No arena team is available."
+            );
+        }
+
+        return selected;
     }
 
     private Map<String, ArenaTeam> ensureArenaTeams(

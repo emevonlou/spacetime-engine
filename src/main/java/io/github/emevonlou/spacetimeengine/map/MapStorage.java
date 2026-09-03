@@ -166,6 +166,10 @@ public final class MapStorage {
                             readPoint(
                                     teamsSection,
                                     teamId + ".base-anchor"
+                            ),
+                            readOptionalPoint(
+                                    teamsSection,
+                                    teamId + ".spawn"
                             )
                     );
 
@@ -236,6 +240,24 @@ public final class MapStorage {
         }
 
         return points;
+    }
+
+    private MapPoint readOptionalPoint(
+            ConfigurationSection configuration,
+            String path
+    ) {
+        if (
+                configuration
+                        .getConfigurationSection(path)
+                        == null
+        ) {
+            return null;
+        }
+
+        return readPoint(
+                configuration,
+                path
+        );
     }
 
     private MapPoint readPoint(

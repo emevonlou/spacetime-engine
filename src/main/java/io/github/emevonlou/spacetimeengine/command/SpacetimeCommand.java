@@ -1098,6 +1098,36 @@ public final class SpacetimeCommand
                 )
         );
 
+        MapPoint spawn =
+                team.getDefinition()
+                        .getSpawn()
+                        .orElse(null);
+
+        if (spawn == null) {
+            sender.sendMessage(
+                    Component.text(
+                            "Spawn: unconfigured",
+                            NamedTextColor.YELLOW
+                    )
+            );
+        } else {
+            sender.sendMessage(
+                    Component.text(
+                            "Spawn: "
+                                    + spawn.x()
+                                    + ", "
+                                    + spawn.y()
+                                    + ", "
+                                    + spawn.z()
+                                    + " | yaw: "
+                                    + spawn.yaw()
+                                    + " | pitch: "
+                                    + spawn.pitch(),
+                            NamedTextColor.GRAY
+                    )
+            );
+        }
+
         return true;
     }
 

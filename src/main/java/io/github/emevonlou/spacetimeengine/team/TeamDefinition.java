@@ -4,19 +4,36 @@ import io.github.emevonlou.spacetimeengine.map.MapPoint;
 
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 
 public final class TeamDefinition {
 
     private final String id;
     private final String displayName;
     private final MapPoint baseAnchor;
+    private final MapPoint spawn;
 
     public TeamDefinition(
             String id,
             String displayName,
             MapPoint baseAnchor
     ) {
+        this(
+                id,
+                displayName,
+                baseAnchor,
+                null
+        );
+    }
+
+    public TeamDefinition(
+            String id,
+            String displayName,
+            MapPoint baseAnchor,
+            MapPoint spawn
+    ) {
         this.id = normalizeId(id);
+
         this.displayName = requireText(
                 displayName,
                 "Team display name"
@@ -26,6 +43,8 @@ public final class TeamDefinition {
                 baseAnchor,
                 "Team base anchor cannot be null."
         );
+
+        this.spawn = spawn;
     }
 
     public String getId() {
@@ -38,6 +57,10 @@ public final class TeamDefinition {
 
     public MapPoint getBaseAnchor() {
         return baseAnchor;
+    }
+
+    public Optional<MapPoint> getSpawn() {
+        return Optional.ofNullable(spawn);
     }
 
     public static String normalizeId(String id) {

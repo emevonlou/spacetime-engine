@@ -10,6 +10,7 @@ import io.github.emevonlou.spacetimeengine.map.MapPoint;
 import io.github.emevonlou.spacetimeengine.team.ArenaTeam;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -748,6 +749,50 @@ public final class SpacetimeCommand
                         NamedTextColor.GRAY
                 )
         );
+
+        Location resolvedCenter =
+                plugin.getMapLocationResolver()
+                        .resolve(map, center)
+                        .orElse(null);
+
+        if (resolvedCenter == null) {
+            sender.sendMessage(
+                    Component.text(
+                            "World status: unloaded",
+                            NamedTextColor.YELLOW
+                    )
+            );
+
+            sender.sendMessage(
+                    Component.text(
+                            "Resolved center: unavailable",
+                            NamedTextColor.YELLOW
+                    )
+            );
+        } else {
+            sender.sendMessage(
+                    Component.text(
+                            "World status: loaded",
+                            NamedTextColor.GREEN
+                    )
+            );
+
+            sender.sendMessage(
+                    Component.text(
+                            "Resolved center: "
+                                    + resolvedCenter.getX()
+                                    + ", "
+                                    + resolvedCenter.getY()
+                                    + ", "
+                                    + resolvedCenter.getZ()
+                                    + " | yaw: "
+                                    + resolvedCenter.getYaw()
+                                    + " | pitch: "
+                                    + resolvedCenter.getPitch(),
+                            NamedTextColor.GRAY
+                    )
+            );
+        }
 
         return true;
     }

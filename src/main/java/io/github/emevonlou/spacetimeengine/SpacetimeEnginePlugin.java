@@ -10,6 +10,7 @@ import io.github.emevonlou.spacetimeengine.command.SpacetimeCommand;
 import io.github.emevonlou.spacetimeengine.listener.PlayerConnectionListener;
 import io.github.emevonlou.spacetimeengine.map.GameMapDefinition;
 import io.github.emevonlou.spacetimeengine.map.GameMapManager;
+import io.github.emevonlou.spacetimeengine.map.MapLocationResolver;
 import io.github.emevonlou.spacetimeengine.map.MapStorage;
 import io.github.emevonlou.spacetimeengine.team.ArenaTeamManager;
 import org.bukkit.command.PluginCommand;
@@ -26,6 +27,7 @@ public final class SpacetimeEnginePlugin
     private ArenaPlayerManager arenaPlayerManager;
     private ArenaStorage arenaStorage;
     private GameMapManager gameMapManager;
+    private MapLocationResolver mapLocationResolver;
     private MapStorage mapStorage;
     private ArenaTeamManager arenaTeamManager;
 
@@ -33,6 +35,7 @@ public final class SpacetimeEnginePlugin
     public void onEnable() {
         initializeArenaSystem();
         initializeMapSystem();
+        initializeMapLocationResolver();
         initializeTeamSystem();
         initializePlayerSystem();
 
@@ -90,6 +93,13 @@ public final class SpacetimeEnginePlugin
         return Objects.requireNonNull(
                 gameMapManager,
                 "GameMapManager has not been initialized."
+        );
+    }
+
+    public MapLocationResolver getMapLocationResolver() {
+        return Objects.requireNonNull(
+                mapLocationResolver,
+                "MapLocationResolver has not been initialized."
         );
     }
 
@@ -180,6 +190,13 @@ public final class SpacetimeEnginePlugin
         getLogger().info(
                 "Mapas carregados: " + loadedMaps
         );
+    }
+
+    private void initializeMapLocationResolver() {
+        mapLocationResolver =
+                new MapLocationResolver(
+                        getServer()
+                );
     }
 
     private void initializeTeamSystem() {

@@ -8,6 +8,7 @@ import io.github.emevonlou.spacetimeengine.arena.ArenaState;
 import io.github.emevonlou.spacetimeengine.map.GameMapDefinition;
 import io.github.emevonlou.spacetimeengine.map.MapPoint;
 import io.github.emevonlou.spacetimeengine.team.ArenaTeam;
+import io.github.emevonlou.spacetimeengine.team.TeamSpawnResolution;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Location;
@@ -1168,6 +1169,43 @@ public final class SpacetimeCommand
                                     + spawn.yaw()
                                     + " | pitch: "
                                     + spawn.pitch(),
+                            NamedTextColor.GRAY
+                    )
+            );
+        }
+
+
+        TeamSpawnResolution spawnResolution =
+                plugin.getTeamSpawnResolver()
+                        .resolve(map, team);
+
+        sender.sendMessage(
+                Component.text(
+                        "Spawn resolution: "
+                                + spawnResolution.getStatus(),
+                        spawnResolution.isSuccess()
+                                ? NamedTextColor.GREEN
+                                : NamedTextColor.YELLOW
+                )
+        );
+
+        if (spawnResolution.isSuccess()) {
+            Location resolvedSpawn =
+                    spawnResolution.getLocation()
+                            .orElseThrow();
+
+            sender.sendMessage(
+                    Component.text(
+                            "Resolved spawn: "
+                                    + resolvedSpawn.getX()
+                                    + ", "
+                                    + resolvedSpawn.getY()
+                                    + ", "
+                                    + resolvedSpawn.getZ()
+                                    + " | yaw: "
+                                    + resolvedSpawn.getYaw()
+                                    + " | pitch: "
+                                    + resolvedSpawn.getPitch(),
                             NamedTextColor.GRAY
                     )
             );

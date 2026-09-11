@@ -13,6 +13,7 @@ import io.github.emevonlou.spacetimeengine.map.GameMapManager;
 import io.github.emevonlou.spacetimeengine.map.MapLocationResolver;
 import io.github.emevonlou.spacetimeengine.map.MapStorage;
 import io.github.emevonlou.spacetimeengine.team.ArenaTeamManager;
+import io.github.emevonlou.spacetimeengine.team.TeamSpawnResolver;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -30,12 +31,14 @@ public final class SpacetimeEnginePlugin
     private MapLocationResolver mapLocationResolver;
     private MapStorage mapStorage;
     private ArenaTeamManager arenaTeamManager;
+    private TeamSpawnResolver teamSpawnResolver;
 
     @Override
     public void onEnable() {
         initializeArenaSystem();
         initializeMapSystem();
         initializeMapLocationResolver();
+        initializeTeamSpawnResolver();
         initializeTeamSystem();
         initializePlayerSystem();
 
@@ -100,6 +103,13 @@ public final class SpacetimeEnginePlugin
         return Objects.requireNonNull(
                 mapLocationResolver,
                 "MapLocationResolver has not been initialized."
+        );
+    }
+
+    public TeamSpawnResolver getTeamSpawnResolver() {
+        return Objects.requireNonNull(
+                teamSpawnResolver,
+                "TeamSpawnResolver has not been initialized."
         );
     }
 
@@ -196,6 +206,13 @@ public final class SpacetimeEnginePlugin
         mapLocationResolver =
                 new MapLocationResolver(
                         getServer()
+                );
+    }
+
+    private void initializeTeamSpawnResolver() {
+        teamSpawnResolver =
+                new TeamSpawnResolver(
+                        getMapLocationResolver()
                 );
     }
 

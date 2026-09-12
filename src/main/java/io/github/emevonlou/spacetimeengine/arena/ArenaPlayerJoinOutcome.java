@@ -1,0 +1,13 @@
+package io.github.emevonlou.spacetimeengine.arena;
+
+public enum ArenaPlayerJoinOutcome {
+    SUCCESS,
+    ALREADY_IN_ARENA,
+    ARENA_FULL,
+    ARENA_NOT_ACCEPTING_PLAYERS,
+    TEAM_ASSIGNMENT_UNAVAILABLE,
+    MAP_UNAVAILABLE,
+    SPAWN_NOT_CONFIGURED,
+    WORLD_NOT_LOADED,
+    TELEPORT_FAILED
+}

@@ -3,7 +3,7 @@ package io.github.emevonlou.spacetimeengine.command;
 import io.github.emevonlou.spacetimeengine.SpacetimeEnginePlugin;
 import io.github.emevonlou.spacetimeengine.arena.Arena;
 import io.github.emevonlou.spacetimeengine.arena.ArenaManager;
-import io.github.emevonlou.spacetimeengine.arena.ArenaJoinResult;
+import io.github.emevonlou.spacetimeengine.arena.ArenaPlayerJoinOutcome;
 import io.github.emevonlou.spacetimeengine.arena.ArenaState;
 import io.github.emevonlou.spacetimeengine.map.GameMapDefinition;
 import io.github.emevonlou.spacetimeengine.map.MapPoint;
@@ -466,14 +466,14 @@ public final class SpacetimeCommand
             return true;
         }
 
-        ArenaJoinResult result =
-                plugin.getArenaPlayerManager()
+        ArenaPlayerJoinOutcome outcome =
+                plugin.getArenaPlayerJoinService()
                         .joinArena(
-                                player.getUniqueId(),
+                                player,
                                 arena
                         );
 
-        switch (result) {
+        switch (outcome) {
             case SUCCESS ->
                     sender.sendMessage(
                             Component.text(
@@ -518,6 +518,42 @@ public final class SpacetimeCommand
                     sender.sendMessage(
                             Component.text(
                                     "Arena teams are unavailable: "
+                                            + arena.getId(),
+                                    NamedTextColor.RED
+                            )
+                    );
+
+            case MAP_UNAVAILABLE ->
+                    sender.sendMessage(
+                            Component.text(
+                                    "Arena map is unavailable: "
+                                            + arena.getId(),
+                                    NamedTextColor.RED
+                            )
+                    );
+
+            case SPAWN_NOT_CONFIGURED ->
+                    sender.sendMessage(
+                            Component.text(
+                                    "Team spawn is not configured: "
+                                            + arena.getId(),
+                                    NamedTextColor.YELLOW
+                            )
+                    );
+
+            case WORLD_NOT_LOADED ->
+                    sender.sendMessage(
+                            Component.text(
+                                    "Arena world is not loaded: "
+                                            + arena.getId(),
+                                    NamedTextColor.YELLOW
+                            )
+                    );
+
+            case TELEPORT_FAILED ->
+                    sender.sendMessage(
+                            Component.text(
+                                    "Could not teleport to arena spawn: "
                                             + arena.getId(),
                                     NamedTextColor.RED
                             )

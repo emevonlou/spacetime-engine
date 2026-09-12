@@ -5,6 +5,7 @@ import io.github.emevonlou.spacetimeengine.arena.ArenaCountdownManager;
 import io.github.emevonlou.spacetimeengine.arena.ArenaLifecycleManager;
 import io.github.emevonlou.spacetimeengine.arena.ArenaManager;
 import io.github.emevonlou.spacetimeengine.arena.ArenaPlayerManager;
+import io.github.emevonlou.spacetimeengine.arena.ArenaPlayerJoinService;
 import io.github.emevonlou.spacetimeengine.arena.ArenaStorage;
 import io.github.emevonlou.spacetimeengine.command.SpacetimeCommand;
 import io.github.emevonlou.spacetimeengine.listener.PlayerConnectionListener;
@@ -26,6 +27,7 @@ public final class SpacetimeEnginePlugin
     private ArenaCountdownManager arenaCountdownManager;
     private ArenaLifecycleManager arenaLifecycleManager;
     private ArenaPlayerManager arenaPlayerManager;
+    private ArenaPlayerJoinService arenaPlayerJoinService;
     private ArenaStorage arenaStorage;
     private GameMapManager gameMapManager;
     private MapLocationResolver mapLocationResolver;
@@ -41,6 +43,7 @@ public final class SpacetimeEnginePlugin
         initializeTeamSpawnResolver();
         initializeTeamSystem();
         initializePlayerSystem();
+        initializePlayerJoinService();
 
         registerCommands();
         registerListeners();
@@ -117,6 +120,13 @@ public final class SpacetimeEnginePlugin
         return Objects.requireNonNull(
                 arenaTeamManager,
                 "ArenaTeamManager has not been initialized."
+        );
+    }
+
+    public ArenaPlayerJoinService getArenaPlayerJoinService() {
+        return Objects.requireNonNull(
+                arenaPlayerJoinService,
+                "ArenaPlayerJoinService has not been initialized."
         );
     }
 
@@ -236,6 +246,16 @@ public final class SpacetimeEnginePlugin
                         arenaCountdownManager,
                         arenaLifecycleManager,
                         getArenaTeamManager()
+                );
+    }
+
+    private void initializePlayerJoinService() {
+        arenaPlayerJoinService =
+                new ArenaPlayerJoinService(
+                        getArenaPlayerManager(),
+                        getArenaTeamManager(),
+                        getGameMapManager(),
+                        getTeamSpawnResolver()
                 );
     }
 

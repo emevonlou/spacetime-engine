@@ -12,6 +12,7 @@ import io.github.emevonlou.spacetimeengine.listener.PlayerConnectionListener;
 import io.github.emevonlou.spacetimeengine.map.GameMapDefinition;
 import io.github.emevonlou.spacetimeengine.map.GameMapManager;
 import io.github.emevonlou.spacetimeengine.map.MapLocationResolver;
+import io.github.emevonlou.spacetimeengine.map.MapWorldManager;
 import io.github.emevonlou.spacetimeengine.map.MapStorage;
 import io.github.emevonlou.spacetimeengine.team.ArenaTeamManager;
 import io.github.emevonlou.spacetimeengine.team.TeamSpawnResolver;
@@ -31,6 +32,7 @@ public final class SpacetimeEnginePlugin
     private ArenaStorage arenaStorage;
     private GameMapManager gameMapManager;
     private MapLocationResolver mapLocationResolver;
+    private MapWorldManager mapWorldManager;
     private MapStorage mapStorage;
     private ArenaTeamManager arenaTeamManager;
     private TeamSpawnResolver teamSpawnResolver;
@@ -39,6 +41,7 @@ public final class SpacetimeEnginePlugin
     public void onEnable() {
         initializeArenaSystem();
         initializeMapSystem();
+        initializeMapWorldManager();
         initializeMapLocationResolver();
         initializeTeamSpawnResolver();
         initializeTeamSystem();
@@ -99,6 +102,13 @@ public final class SpacetimeEnginePlugin
         return Objects.requireNonNull(
                 gameMapManager,
                 "GameMapManager has not been initialized."
+        );
+    }
+
+    public MapWorldManager getMapWorldManager() {
+        return Objects.requireNonNull(
+                mapWorldManager,
+                "MapWorldManager has not been initialized."
         );
     }
 
@@ -210,6 +220,13 @@ public final class SpacetimeEnginePlugin
         getLogger().info(
                 "Mapas carregados: " + loadedMaps
         );
+    }
+
+    private void initializeMapWorldManager() {
+        mapWorldManager =
+                new MapWorldManager(
+                        getServer()
+                );
     }
 
     private void initializeMapLocationResolver() {

@@ -34,9 +34,27 @@ public final class MapWorldManager {
                 "Game map cannot be null."
         );
 
-        String worldName =
-                map.getWorldName();
+        return ensureLoadedWorld(
+                map.getWorldName()
+        );
+    }
 
+    public MapWorldLoadResult ensureLoaded(
+            ArenaWorldInstance instance
+    ) {
+        Objects.requireNonNull(
+                instance,
+                "Arena world instance cannot be null."
+        );
+
+        return ensureLoadedWorld(
+                instance.getRuntimeWorldName()
+        );
+    }
+
+    private MapWorldLoadResult ensureLoadedWorld(
+            String worldName
+    ) {
         World loadedWorld =
                 server.getWorld(worldName);
 

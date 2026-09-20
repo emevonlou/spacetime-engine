@@ -5,6 +5,8 @@ import io.github.emevonlou.spacetimeengine.arena.Arena;
 import io.github.emevonlou.spacetimeengine.arena.ArenaManager;
 import io.github.emevonlou.spacetimeengine.arena.ArenaPlayerJoinOutcome;
 import io.github.emevonlou.spacetimeengine.arena.ArenaState;
+import io.github.emevonlou.spacetimeengine.map.ArenaWorldInstance;
+import io.github.emevonlou.spacetimeengine.map.ArenaWorldPreparationResult;
 import io.github.emevonlou.spacetimeengine.map.GameMapDefinition;
 import io.github.emevonlou.spacetimeengine.map.MapPoint;
 import io.github.emevonlou.spacetimeengine.map.MapWorldLoadResult;
@@ -39,6 +41,8 @@ public final class SpacetimeCommand
                     "map",
                     "maps",
                     "players",
+                    "loadarenaworld",
+                    "prepareworld",
                     "state",
                     "team",
                     "teams",
@@ -95,6 +99,12 @@ public final class SpacetimeCommand
 
             case "players" ->
                     showArenaPlayers(sender, args);
+
+            case "loadarenaworld" ->
+                    loadArenaWorld(sender, args);
+
+            case "prepareworld" ->
+                    prepareArenaWorld(sender, args);
 
             case "state" ->
                     showArenaState(sender, args);
@@ -973,6 +983,256 @@ public final class SpacetimeCommand
         return true;
     }
 
+    private boolean loadArenaWorld(
+            CommandSender sender,
+            String[] args
+    ) {
+        if (!hasAdminPermission(sender)) {
+            return true;
+        }
+
+        if (args.length != 2) {
+            sender.sendMessage(
+                    Component.text(
+                            "Usage: /spacetime loadarenaworld <arena>",
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        Arena arena = findArenaOrNotify(
+                sender,
+                args[1]
+        );
+
+        if (arena == null) {
+            return true;
+        }
+
+        if (arena.getMapId().isEmpty()) {
+            sender.sendMessage(
+                    Component.text(
+                            "Arena has no map assigned: "
+                                    + arena.getId(),
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        String mapId =
+                arena.getMapId().orElseThrow();
+
+        GameMapDefinition map =
+                plugin.getGameMapManager()
+                        .findMap(mapId)
+                        .orElse(null);
+
+        if (map == null) {
+            sender.sendMessage(
+                    Component.text(
+                            "Map unavailable: " + mapId,
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        ArenaWorldInstance instance =
+                ArenaWorldInstance.from(
+                        arena,
+                        map
+                );
+
+        MapWorldLoadResult result =
+                plugin.getMapWorldManager()
+                        .ensureLoaded(instance);
+
+        sender.sendMessage(
+                Component.text(
+                        "Runtime world: "
+                                + instance.getRuntimeWorldName(),
+                        NamedTextColor.GRAY
+                )
+        );
+
+        switch (result.getStatus()) {
+            case ALREADY_LOADED ->
+                    sender.sendMessage(
+                            Component.text(
+                                    "Arena world load: ALREADY_LOADED",
+                                    NamedTextColor.GREEN
+                            )
+                    );
+
+            case LOADED ->
+                    sender.sendMessage(
+                            Component.text(
+                                    "Arena world load: LOADED",
+                                    NamedTextColor.GREEN
+                            )
+                    );
+
+            case WORLD_NOT_FOUND ->
+                    sender.sendMessage(
+                            Component.text(
+                                    "Arena world load: WORLD_NOT_FOUND",
+                                    NamedTextColor.YELLOW
+                            )
+                    );
+
+            case LOAD_FAILED ->
+                    sender.sendMessage(
+                            Component.text(
+                                    "Arena world load: LOAD_FAILED",
+                                    NamedTextColor.RED
+                            )
+                    );
+        }
+
+        result.getWorld().ifPresent(
+                world ->
+                        sender.sendMessage(
+                                Component.text(
+                                        "Loaded world: "
+                                                + world.getName(),
+                                        NamedTextColor.GRAY
+                                )
+                        )
+        );
+
+        return true;
+    }
+
+    private boolean prepareArenaWorld(
+            CommandSender sender,
+            String[] args
+    ) {
+        if (!hasAdminPermission(sender)) {
+            return true;
+        }
+
+        if (args.length != 2) {
+            sender.sendMessage(
+                    Component.text(
+                            "Usage: /spacetime prepareworld <arena>",
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        Arena arena = findArenaOrNotify(
+                sender,
+                args[1]
+        );
+
+        if (arena == null) {
+            return true;
+        }
+
+        if (arena.getMapId().isEmpty()) {
+            sender.sendMessage(
+                    Component.text(
+                            "Arena has no map assigned: "
+                                    + arena.getId(),
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        String mapId =
+                arena.getMapId().orElseThrow();
+
+        GameMapDefinition map =
+                plugin.getGameMapManager()
+                        .findMap(mapId)
+                        .orElse(null);
+
+        if (map == null) {
+            sender.sendMessage(
+                    Component.text(
+                            "Map unavailable: " + mapId,
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        ArenaWorldInstance instance =
+                ArenaWorldInstance.from(
+                        arena,
+                        map
+                );
+
+        ArenaWorldPreparationResult result =
+                plugin.getArenaWorldPreparer()
+                        .prepare(instance);
+
+        sender.sendMessage(
+                Component.text(
+                        "Source world: "
+                                + instance.getSourceWorldName(),
+                        NamedTextColor.GRAY
+                )
+        );
+
+        sender.sendMessage(
+                Component.text(
+                        "Runtime world: "
+                                + instance.getRuntimeWorldName(),
+                        NamedTextColor.GRAY
+                )
+        );
+
+        switch (result.getStatus()) {
+            case PREPARED ->
+                    sender.sendMessage(
+                            Component.text(
+                                    "Arena world preparation: PREPARED",
+                                    NamedTextColor.GREEN
+                            )
+                    );
+
+            case RUNTIME_ALREADY_EXISTS ->
+                    sender.sendMessage(
+                            Component.text(
+                                    "Arena world preparation: "
+                                            + "RUNTIME_ALREADY_EXISTS",
+                                    NamedTextColor.YELLOW
+                            )
+                    );
+
+            case SOURCE_NOT_FOUND ->
+                    sender.sendMessage(
+                            Component.text(
+                                    "Arena world preparation: "
+                                            + "SOURCE_NOT_FOUND",
+                                    NamedTextColor.YELLOW
+                            )
+                    );
+
+            case PREPARATION_FAILED ->
+                    sender.sendMessage(
+                            Component.text(
+                                    "Arena world preparation: "
+                                            + "PREPARATION_FAILED",
+                                    NamedTextColor.RED
+                            )
+                    );
+        }
+
+        return true;
+    }
+
     private boolean loadMapWorld(
             CommandSender sender,
             String[] args
@@ -1567,8 +1827,9 @@ public final class SpacetimeCommand
                 Component.text(
                         "Usage: /"
                                 + label
-                                + " [arena|arenas|create|join|leave|limits|map|maps|"
-                                + "players|state|team|teams|transition|world]",
+                                + " [arena|arenas|create|join|leave|limits|"
+                                + "loadarenaworld|map|maps|players|prepareworld|"
+                                + "state|team|teams|transition|world]",
                         NamedTextColor.YELLOW
                 )
         );
@@ -1668,6 +1929,8 @@ public final class SpacetimeCommand
                         args[0].equalsIgnoreCase("join")
                                 || args[0].equalsIgnoreCase("limits")
                                 || args[0].equalsIgnoreCase("players")
+                                || args[0].equalsIgnoreCase("loadarenaworld")
+                                || args[0].equalsIgnoreCase("prepareworld")
                                 || args[0].equalsIgnoreCase("state")
                                 || args[0].equalsIgnoreCase(
                                 "transition"

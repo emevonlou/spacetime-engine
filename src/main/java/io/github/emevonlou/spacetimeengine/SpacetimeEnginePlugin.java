@@ -13,6 +13,7 @@ import io.github.emevonlou.spacetimeengine.map.GameMapDefinition;
 import io.github.emevonlou.spacetimeengine.map.GameMapManager;
 import io.github.emevonlou.spacetimeengine.map.MapLocationResolver;
 import io.github.emevonlou.spacetimeengine.map.MapWorldManager;
+import io.github.emevonlou.spacetimeengine.map.ArenaWorldPreparer;
 import io.github.emevonlou.spacetimeengine.map.MapStorage;
 import io.github.emevonlou.spacetimeengine.team.ArenaTeamManager;
 import io.github.emevonlou.spacetimeengine.team.TeamSpawnResolver;
@@ -33,6 +34,7 @@ public final class SpacetimeEnginePlugin
     private GameMapManager gameMapManager;
     private MapLocationResolver mapLocationResolver;
     private MapWorldManager mapWorldManager;
+    private ArenaWorldPreparer arenaWorldPreparer;
     private MapStorage mapStorage;
     private ArenaTeamManager arenaTeamManager;
     private TeamSpawnResolver teamSpawnResolver;
@@ -42,6 +44,7 @@ public final class SpacetimeEnginePlugin
         initializeArenaSystem();
         initializeMapSystem();
         initializeMapWorldManager();
+        initializeArenaWorldPreparer();
         initializeMapLocationResolver();
         initializeTeamSpawnResolver();
         initializeTeamSystem();
@@ -109,6 +112,13 @@ public final class SpacetimeEnginePlugin
         return Objects.requireNonNull(
                 mapWorldManager,
                 "MapWorldManager has not been initialized."
+        );
+    }
+
+    public ArenaWorldPreparer getArenaWorldPreparer() {
+        return Objects.requireNonNull(
+                arenaWorldPreparer,
+                "ArenaWorldPreparer has not been initialized."
         );
     }
 
@@ -225,6 +235,13 @@ public final class SpacetimeEnginePlugin
     private void initializeMapWorldManager() {
         mapWorldManager =
                 new MapWorldManager(
+                        getServer()
+                );
+    }
+
+    private void initializeArenaWorldPreparer() {
+        arenaWorldPreparer =
+                new ArenaWorldPreparer(
                         getServer()
                 );
     }

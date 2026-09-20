@@ -537,6 +537,24 @@ public final class SpacetimeCommand
                             )
                     );
 
+            case WORLD_NOT_FOUND ->
+                    sender.sendMessage(
+                            Component.text(
+                                    "Arena world was not found: "
+                                            + arena.getId(),
+                                    NamedTextColor.YELLOW
+                            )
+                    );
+
+            case WORLD_LOAD_FAILED ->
+                    sender.sendMessage(
+                            Component.text(
+                                    "Arena world could not be loaded: "
+                                            + arena.getId(),
+                                    NamedTextColor.RED
+                            )
+                    );
+
             case SPAWN_NOT_CONFIGURED ->
                     sender.sendMessage(
                             Component.text(

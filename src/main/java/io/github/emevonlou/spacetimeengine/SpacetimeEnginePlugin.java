@@ -272,6 +272,7 @@ public final class SpacetimeEnginePlugin
                         getArenaPlayerManager(),
                         getArenaTeamManager(),
                         getGameMapManager(),
+                        getMapWorldManager(),
                         getTeamSpawnResolver()
                 );
     }

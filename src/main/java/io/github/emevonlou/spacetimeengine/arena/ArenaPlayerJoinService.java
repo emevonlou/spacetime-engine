@@ -2,6 +2,8 @@ package io.github.emevonlou.spacetimeengine.arena;
 
 import io.github.emevonlou.spacetimeengine.map.GameMapDefinition;
 import io.github.emevonlou.spacetimeengine.map.GameMapManager;
+import io.github.emevonlou.spacetimeengine.map.MapWorldLoadResult;
+import io.github.emevonlou.spacetimeengine.map.MapWorldManager;
 import io.github.emevonlou.spacetimeengine.team.ArenaTeam;
 import io.github.emevonlou.spacetimeengine.team.ArenaTeamManager;
 import io.github.emevonlou.spacetimeengine.team.TeamSpawnResolution;
@@ -18,12 +20,14 @@ public final class ArenaPlayerJoinService {
     private final ArenaPlayerManager playerManager;
     private final ArenaTeamManager teamManager;
     private final GameMapManager gameMapManager;
+    private final MapWorldManager mapWorldManager;
     private final TeamSpawnResolver spawnResolver;
 
     public ArenaPlayerJoinService(
             ArenaPlayerManager playerManager,
             ArenaTeamManager teamManager,
             GameMapManager gameMapManager,
+            MapWorldManager mapWorldManager,
             TeamSpawnResolver spawnResolver
     ) {
         this.playerManager = Objects.requireNonNull(
@@ -39,6 +43,11 @@ public final class ArenaPlayerJoinService {
         this.gameMapManager = Objects.requireNonNull(
                 gameMapManager,
                 "GameMapManager cannot be null."
+        );
+
+        this.mapWorldManager = Objects.requireNonNull(
+                mapWorldManager,
+                "MapWorldManager cannot be null."
         );
 
         this.spawnResolver = Objects.requireNonNull(
@@ -99,6 +108,29 @@ public final class ArenaPlayerJoinService {
                     playerId,
                     ArenaPlayerJoinOutcome.MAP_UNAVAILABLE
             );
+        }
+
+        MapWorldLoadResult worldLoadResult =
+                mapWorldManager.ensureLoaded(map);
+
+        switch (worldLoadResult.getStatus()) {
+            case WORLD_NOT_FOUND -> {
+                return rollback(
+                        playerId,
+                        ArenaPlayerJoinOutcome.WORLD_NOT_FOUND
+                );
+            }
+
+            case LOAD_FAILED -> {
+                return rollback(
+                        playerId,
+                        ArenaPlayerJoinOutcome.WORLD_LOAD_FAILED
+                );
+            }
+
+            case ALREADY_LOADED, LOADED -> {
+                // Continue below.
+            }
         }
 
         ArenaTeam team =

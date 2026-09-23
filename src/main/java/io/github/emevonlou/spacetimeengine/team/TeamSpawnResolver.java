@@ -1,5 +1,6 @@
 package io.github.emevonlou.spacetimeengine.team;
 
+import io.github.emevonlou.spacetimeengine.map.ArenaWorldInstance;
 import io.github.emevonlou.spacetimeengine.map.GameMapDefinition;
 import io.github.emevonlou.spacetimeengine.map.MapLocationResolver;
 import io.github.emevonlou.spacetimeengine.map.MapPoint;
@@ -32,9 +33,50 @@ public final class TeamSpawnResolver {
                 "Game map cannot be null."
         );
 
+        return resolve(
+                team,
+                point ->
+                        mapLocationResolver.resolve(
+                                map,
+                                point
+                        )
+        );
+    }
+
+    public TeamSpawnResolution resolve(
+            ArenaWorldInstance instance,
+            ArenaTeam team
+    ) {
+        Objects.requireNonNull(
+                instance,
+                "Arena world instance cannot be null."
+        );
+
+        return resolve(
+                team,
+                point ->
+                        mapLocationResolver.resolve(
+                                instance,
+                                point
+                        )
+        );
+    }
+
+    private TeamSpawnResolution resolve(
+            ArenaTeam team,
+            java.util.function.Function<
+                    MapPoint,
+                    Optional<Location>
+                    > locationResolver
+    ) {
         Objects.requireNonNull(
                 team,
                 "Arena team cannot be null."
+        );
+
+        Objects.requireNonNull(
+                locationResolver,
+                "Location resolver cannot be null."
         );
 
         Optional<MapPoint> spawn =
@@ -47,8 +89,7 @@ public final class TeamSpawnResolver {
         }
 
         Optional<Location> location =
-                mapLocationResolver.resolve(
-                        map,
+                locationResolver.apply(
                         spawn.get()
                 );
 

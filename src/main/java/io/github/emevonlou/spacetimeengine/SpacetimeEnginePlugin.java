@@ -287,8 +287,10 @@ public final class SpacetimeEnginePlugin
         arenaPlayerJoinService =
                 new ArenaPlayerJoinService(
                         getArenaPlayerManager(),
+                        arenaCountdownManager,
                         getArenaTeamManager(),
                         getGameMapManager(),
+                        getArenaWorldPreparer(),
                         getMapWorldManager(),
                         getTeamSpawnResolver()
                 );

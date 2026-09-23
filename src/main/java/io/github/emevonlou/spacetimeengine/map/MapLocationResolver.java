@@ -27,15 +27,43 @@ public final class MapLocationResolver {
                 "Game map cannot be null."
         );
 
+        return resolveWorld(
+                map.getWorldName(),
+                point
+        );
+    }
+
+    public Optional<Location> resolve(
+            ArenaWorldInstance instance,
+            MapPoint point
+    ) {
+        Objects.requireNonNull(
+                instance,
+                "Arena world instance cannot be null."
+        );
+
+        return resolveWorld(
+                instance.getRuntimeWorldName(),
+                point
+        );
+    }
+
+    private Optional<Location> resolveWorld(
+            String worldName,
+            MapPoint point
+    ) {
+        Objects.requireNonNull(
+                worldName,
+                "World name cannot be null."
+        );
+
         Objects.requireNonNull(
                 point,
                 "Map point cannot be null."
         );
 
         World world =
-                server.getWorld(
-                        map.getWorldName()
-                );
+                server.getWorld(worldName);
 
         if (world == null) {
             return Optional.empty();

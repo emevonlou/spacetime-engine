@@ -97,8 +97,6 @@ public final class ArenaPlayerManager {
                 arena.getId()
         );
 
-        countdownManager.evaluate(arena);
-
         return ArenaJoinResult.SUCCESS;
     }
 

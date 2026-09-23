@@ -1,5 +1,8 @@
 package io.github.emevonlou.spacetimeengine.arena;
 
+import io.github.emevonlou.spacetimeengine.map.ArenaWorldInstance;
+import io.github.emevonlou.spacetimeengine.map.ArenaWorldPreparationResult;
+import io.github.emevonlou.spacetimeengine.map.ArenaWorldPreparer;
 import io.github.emevonlou.spacetimeengine.map.GameMapDefinition;
 import io.github.emevonlou.spacetimeengine.map.GameMapManager;
 import io.github.emevonlou.spacetimeengine.map.MapWorldLoadResult;
@@ -18,21 +21,30 @@ import java.util.UUID;
 public final class ArenaPlayerJoinService {
 
     private final ArenaPlayerManager playerManager;
+    private final ArenaCountdownManager countdownManager;
     private final ArenaTeamManager teamManager;
     private final GameMapManager gameMapManager;
+    private final ArenaWorldPreparer worldPreparer;
     private final MapWorldManager mapWorldManager;
     private final TeamSpawnResolver spawnResolver;
 
     public ArenaPlayerJoinService(
             ArenaPlayerManager playerManager,
+            ArenaCountdownManager countdownManager,
             ArenaTeamManager teamManager,
             GameMapManager gameMapManager,
+            ArenaWorldPreparer worldPreparer,
             MapWorldManager mapWorldManager,
             TeamSpawnResolver spawnResolver
     ) {
         this.playerManager = Objects.requireNonNull(
                 playerManager,
                 "ArenaPlayerManager cannot be null."
+        );
+
+        this.countdownManager = Objects.requireNonNull(
+                countdownManager,
+                "ArenaCountdownManager cannot be null."
         );
 
         this.teamManager = Objects.requireNonNull(
@@ -43,6 +55,11 @@ public final class ArenaPlayerJoinService {
         this.gameMapManager = Objects.requireNonNull(
                 gameMapManager,
                 "GameMapManager cannot be null."
+        );
+
+        this.worldPreparer = Objects.requireNonNull(
+                worldPreparer,
+                "ArenaWorldPreparer cannot be null."
         );
 
         this.mapWorldManager = Objects.requireNonNull(
@@ -93,7 +110,7 @@ public final class ArenaPlayerJoinService {
          * arenas that do not have a map assigned.
          */
         if (arena.getMapId().isEmpty()) {
-            return ArenaPlayerJoinOutcome.SUCCESS;
+            return completeJoin(arena);
         }
 
         String mapId =
@@ -110,8 +127,37 @@ public final class ArenaPlayerJoinService {
             );
         }
 
+        ArenaWorldInstance instance =
+                ArenaWorldInstance.from(
+                        arena,
+                        map
+                );
+
+        ArenaWorldPreparationResult preparationResult =
+                worldPreparer.prepare(instance);
+
+        switch (preparationResult.getStatus()) {
+            case SOURCE_NOT_FOUND -> {
+                return rollback(
+                        playerId,
+                        ArenaPlayerJoinOutcome.WORLD_NOT_FOUND
+                );
+            }
+
+            case PREPARATION_FAILED -> {
+                return rollback(
+                        playerId,
+                        ArenaPlayerJoinOutcome.WORLD_LOAD_FAILED
+                );
+            }
+
+            case PREPARED, RUNTIME_ALREADY_EXISTS -> {
+                // Continue below.
+            }
+        }
+
         MapWorldLoadResult worldLoadResult =
-                mapWorldManager.ensureLoaded(map);
+                mapWorldManager.ensureLoaded(instance);
 
         switch (worldLoadResult.getStatus()) {
             case WORLD_NOT_FOUND -> {
@@ -147,7 +193,7 @@ public final class ArenaPlayerJoinService {
 
         TeamSpawnResolution spawnResolution =
                 spawnResolver.resolve(
-                        map,
+                        instance,
                         team
                 );
 
@@ -189,6 +235,14 @@ public final class ArenaPlayerJoinService {
             rollbackPlayer(playerId);
             throw exception;
         }
+
+        return completeJoin(arena);
+    }
+
+    private ArenaPlayerJoinOutcome completeJoin(
+            Arena arena
+    ) {
+        countdownManager.evaluate(arena);
 
         return ArenaPlayerJoinOutcome.SUCCESS;
     }

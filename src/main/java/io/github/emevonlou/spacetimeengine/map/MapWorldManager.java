@@ -52,6 +52,46 @@ public final class MapWorldManager {
         );
     }
 
+    public ArenaWorldUnloadStatus unload(
+            ArenaWorldInstance instance
+    ) {
+        Objects.requireNonNull(
+                instance,
+                "Arena world instance cannot be null."
+        );
+
+        World world =
+                server.getWorld(
+                        instance.getRuntimeWorldName()
+                );
+
+        if (world == null) {
+            return ArenaWorldUnloadStatus.NOT_LOADED;
+        }
+
+        if (!world.getPlayers().isEmpty()) {
+            return ArenaWorldUnloadStatus.PLAYERS_PRESENT;
+        }
+
+        try {
+            boolean unloaded =
+                    server.unloadWorld(
+                            world,
+                            false
+                    );
+
+            if (!unloaded) {
+                return ArenaWorldUnloadStatus
+                        .UNLOAD_FAILED;
+            }
+
+            return ArenaWorldUnloadStatus.UNLOADED;
+        } catch (RuntimeException exception) {
+            return ArenaWorldUnloadStatus
+                    .UNLOAD_FAILED;
+        }
+    }
+
     private MapWorldLoadResult ensureLoadedWorld(
             String worldName
     ) {

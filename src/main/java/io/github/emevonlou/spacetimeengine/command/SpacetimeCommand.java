@@ -43,6 +43,7 @@ public final class SpacetimeCommand
                     "players",
                     "loadarenaworld",
                     "prepareworld",
+                    "unloadarenaworld",
                     "state",
                     "team",
                     "teams",
@@ -105,6 +106,9 @@ public final class SpacetimeCommand
 
             case "prepareworld" ->
                     prepareArenaWorld(sender, args);
+
+            case "unloadarenaworld" ->
+                    unloadArenaWorld(sender, args);
 
             case "state" ->
                     showArenaState(sender, args);
@@ -983,6 +987,120 @@ public final class SpacetimeCommand
         return true;
     }
 
+    private boolean unloadArenaWorld(
+            CommandSender sender,
+            String[] args
+    ) {
+        if (!hasAdminPermission(sender)) {
+            return true;
+        }
+
+        if (args.length != 2) {
+            sender.sendMessage(
+                    Component.text(
+                            "Usage: /spacetime unloadarenaworld <arena>",
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        Arena arena = findArenaOrNotify(
+                sender,
+                args[1]
+        );
+
+        if (arena == null) {
+            return true;
+        }
+
+        if (arena.getMapId().isEmpty()) {
+            sender.sendMessage(
+                    Component.text(
+                            "Arena has no map assigned: "
+                                    + arena.getId(),
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        String mapId =
+                arena.getMapId().orElseThrow();
+
+        GameMapDefinition map =
+                plugin.getGameMapManager()
+                        .findMap(mapId)
+                        .orElse(null);
+
+        if (map == null) {
+            sender.sendMessage(
+                    Component.text(
+                            "Map unavailable: " + mapId,
+                            NamedTextColor.RED
+                    )
+            );
+
+            return true;
+        }
+
+        ArenaWorldInstance instance =
+                ArenaWorldInstance.from(
+                        arena,
+                        map
+                );
+
+        var status =
+                plugin.getMapWorldManager()
+                        .unload(instance);
+
+        sender.sendMessage(
+                Component.text(
+                        "Runtime world: "
+                                + instance.getRuntimeWorldName(),
+                        NamedTextColor.GRAY
+                )
+        );
+
+        switch (status) {
+            case UNLOADED ->
+                    sender.sendMessage(
+                            Component.text(
+                                    "Arena world unload: UNLOADED",
+                                    NamedTextColor.GREEN
+                            )
+                    );
+
+            case NOT_LOADED ->
+                    sender.sendMessage(
+                            Component.text(
+                                    "Arena world unload: NOT_LOADED",
+                                    NamedTextColor.YELLOW
+                            )
+                    );
+
+            case PLAYERS_PRESENT ->
+                    sender.sendMessage(
+                            Component.text(
+                                    "Arena world unload: PLAYERS_PRESENT",
+                                    NamedTextColor.YELLOW
+                            )
+                    );
+
+            case UNLOAD_FAILED ->
+                    sender.sendMessage(
+                            Component.text(
+                                    "Arena world unload: UNLOAD_FAILED",
+                                    NamedTextColor.RED
+                            )
+                    );
+        }
+
+        return true;
+    }
+
     private boolean loadArenaWorld(
             CommandSender sender,
             String[] args
@@ -1829,7 +1947,7 @@ public final class SpacetimeCommand
                                 + label
                                 + " [arena|arenas|create|join|leave|limits|"
                                 + "loadarenaworld|map|maps|players|prepareworld|"
-                                + "state|team|teams|transition|world]",
+                                + "state|team|teams|transition|unloadarenaworld|world]",
                         NamedTextColor.YELLOW
                 )
         );
@@ -1931,6 +2049,7 @@ public final class SpacetimeCommand
                                 || args[0].equalsIgnoreCase("players")
                                 || args[0].equalsIgnoreCase("loadarenaworld")
                                 || args[0].equalsIgnoreCase("prepareworld")
+                                || args[0].equalsIgnoreCase("unloadarenaworld")
                                 || args[0].equalsIgnoreCase("state")
                                 || args[0].equalsIgnoreCase(
                                 "transition"

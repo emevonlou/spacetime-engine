@@ -14,6 +14,7 @@ import io.github.emevonlou.spacetimeengine.map.GameMapManager;
 import io.github.emevonlou.spacetimeengine.map.MapLocationResolver;
 import io.github.emevonlou.spacetimeengine.map.MapWorldManager;
 import io.github.emevonlou.spacetimeengine.map.ArenaWorldPreparer;
+import io.github.emevonlou.spacetimeengine.map.ArenaWorldRemover;
 import io.github.emevonlou.spacetimeengine.map.MapStorage;
 import io.github.emevonlou.spacetimeengine.team.ArenaTeamManager;
 import io.github.emevonlou.spacetimeengine.team.TeamSpawnResolver;
@@ -35,6 +36,7 @@ public final class SpacetimeEnginePlugin
     private MapLocationResolver mapLocationResolver;
     private MapWorldManager mapWorldManager;
     private ArenaWorldPreparer arenaWorldPreparer;
+    private ArenaWorldRemover arenaWorldRemover;
     private MapStorage mapStorage;
     private ArenaTeamManager arenaTeamManager;
     private TeamSpawnResolver teamSpawnResolver;
@@ -45,6 +47,7 @@ public final class SpacetimeEnginePlugin
         initializeMapSystem();
         initializeMapWorldManager();
         initializeArenaWorldPreparer();
+        initializeArenaWorldRemover();
         initializeMapLocationResolver();
         initializeTeamSpawnResolver();
         initializeTeamSystem();
@@ -119,6 +122,13 @@ public final class SpacetimeEnginePlugin
         return Objects.requireNonNull(
                 arenaWorldPreparer,
                 "ArenaWorldPreparer has not been initialized."
+        );
+    }
+
+    public ArenaWorldRemover getArenaWorldRemover() {
+        return Objects.requireNonNull(
+                arenaWorldRemover,
+                "ArenaWorldRemover has not been initialized."
         );
     }
 
@@ -242,6 +252,13 @@ public final class SpacetimeEnginePlugin
     private void initializeArenaWorldPreparer() {
         arenaWorldPreparer =
                 new ArenaWorldPreparer(
+                        getServer()
+                );
+    }
+
+    private void initializeArenaWorldRemover() {
+        arenaWorldRemover =
+                new ArenaWorldRemover(
                         getServer()
                 );
     }
